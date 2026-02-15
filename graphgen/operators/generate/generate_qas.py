@@ -470,11 +470,27 @@ async def generate_qas(
                 ),
                 chinese_only=chinese_only,
             ), "hierarchical"),
-            (DAToGGenerator(actual_llm_client, data_format=data_format, default_dimension=generation_config.get("default_dimension", "concept_explanation")), "datog"),
         ]
 
         all_results = []
         data_format = generation_config["data_format"]
+
+        generators = [
+            (AtomicGenerator(actual_llm_client, data_format=data_format), "atomic"),
+            (AggregatedGenerator(actual_llm_client, data_format=data_format), "aggregated"),
+            (MultiHopGenerator(actual_llm_client, data_format=data_format), "multi_hop"),
+            (CoTGenerator(actual_llm_client, data_format=data_format), "cot"),
+            (TreeStructureGenerator(
+                actual_llm_client,
+                structure_format=generation_config.get("structure_format", "markdown"),
+                hierarchical_relations=generation_config.get(
+                    "hierarchical_relations",
+                    ["is_a", "subclass_of", "part_of", "includes", "type_of"]
+                ),
+                chinese_only=chinese_only,
+            ), "hierarchical"),
+            (DAToGGenerator(actual_llm_client, data_format=data_format, default_dimension=generation_config.get("default_dimension", "concept_explanation")), "datog"),
+        ]
         
         # 计算每个模式的目标QA数量
         mode_names = [gen_mode for _, gen_mode in generators]
