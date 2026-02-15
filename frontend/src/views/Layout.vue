@@ -30,6 +30,15 @@
             </template>
             <el-menu-item index="/config/sft">SFT配置</el-menu-item>
             <el-menu-item index="/config/evaluation">评测配置</el-menu-item>
+            <el-menu-item index="/config/datog">DA-ToG配置</el-menu-item>
+          </el-sub-menu>
+          <el-sub-menu v-if="authStore.isAdmin" index="/datog">
+            <template #title>
+              <el-icon><Grid /></el-icon>
+              <span>DA-ToG</span>
+            </template>
+            <el-menu-item index="/datog/taxonomies">意图树管理</el-menu-item>
+            <el-menu-item index="/datog/pipeline">DA-ToG管道</el-menu-item>
           </el-sub-menu>
           <el-menu-item v-if="authStore.isAdmin" index="/users">
             <el-icon><User /></el-icon>
@@ -126,7 +135,7 @@
 import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { List, Plus, Setting, User, Lock, SwitchButton } from '@element-plus/icons-vue'
+import { List, Plus, Setting, User, Lock, SwitchButton, Grid } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()

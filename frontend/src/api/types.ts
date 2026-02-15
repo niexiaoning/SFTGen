@@ -244,3 +244,80 @@ export interface ReviewStats {
   auto_rejected: number
 }
 
+// DA-ToG (Domain-Agnostic Tree-of-Graphs) 相关类型
+export interface DAToGConfig {
+  taxonomy_path: string
+  domain?: string
+  sampling_strategy?: 'coverage' | 'uniform_branch' | 'depth_weighted'
+  graph_max_hops?: number
+  graph_max_nodes?: number
+  serialization_format?: 'natural_language' | 'markdown' | 'json'
+  critic_type?: 'llm' | 'rule' | 'none'
+  critic_min_score?: number
+  generation_target_qa_pairs?: number
+  batch_size?: number
+}
+
+export interface DAToGPipelineConfig {
+  domain_config_path: string
+  taxonomy_path?: string
+  input_file?: string
+  kg_path?: string
+  output_path?: string
+  generate_taxonomy?: boolean
+  source_document?: string
+}
+
+export interface DAToGTaxonomy {
+  id: string
+  name: string
+  path: string
+  domain: string
+  created_at?: string
+}
+
+export interface TaxonomyNode {
+  id: string
+  name: string
+  description?: string
+  cognitive_dimension?: string
+  children?: TaxonomyNode[]
+}
+
+export interface TaxonomyStatistics {
+  total_nodes: number
+  root_count: number
+  leaf_count: number
+  max_depth: number
+  dimension_distribution: Record<string, number>
+  depth_distribution: Record<number, number>
+}
+
+export interface PipelineTaskStatus {
+  task_id: string
+  status: 'not_started' | 'running' | 'completed' | 'failed'
+  output_file?: string
+  error_message?: string
+  progress?: number
+}
+
+// DA-ToG 指标相关类型
+export interface DAToGMetricsReport {
+  coverage: {
+    overall_ratio: number
+    by_dimension: Record<string, number>
+    covered_intents: string[]
+    uncovered_intents: string[]
+  }
+  distribution: {
+    by_dimension: Record<string, number>
+    by_depth: Record<number, number>
+    by_branch: Record<string, number>
+  }
+  stats: {
+    total_qa_pairs: number
+    unique_intents: number
+    avg_questions_per_intent: number
+  }
+}
+

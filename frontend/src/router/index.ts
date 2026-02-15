@@ -59,6 +59,24 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: '配置设置', requiresAuth: true, requiresAdmin: true }
       },
       {
+        path: '/config/datog',
+        name: 'DAToGConfig',
+        component: () => import('@/views/DAToGConfig.vue'),
+        meta: { title: 'DA-ToG配置', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: '/datog/taxonomies',
+        name: 'DAToGTaxonomies',
+        component: () => import('@/views/DAToGTaxonomies.vue'),
+        meta: { title: '意图树管理', requiresAuth: true, requiresAdmin: true }
+      },
+      {
+        path: '/datog/pipeline',
+        name: 'DAToGPipeline',
+        component: () => import('@/views/DAToGPipeline.vue'),
+        meta: { title: 'DA-ToG管道', requiresAuth: true, requiresAdmin: true }
+      },
+      {
         path: '/task/:id',
         name: 'TaskDetail',
         component: () => import('@/views/TaskDetail.vue'),
