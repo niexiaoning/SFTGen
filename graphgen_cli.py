@@ -5,6 +5,7 @@ KGE-Gen 命令行工具
 """
 
 import argparse
+import asyncio
 import json
 import logging
 import os
@@ -14,6 +15,7 @@ from datetime import datetime
 from importlib.resources import files
 
 import pandas as pd
+import yaml
 from dotenv import load_dotenv
 from tqdm import tqdm
 
@@ -22,6 +24,12 @@ from graphgen.models import OpenAIClient, Tokenizer
 from graphgen.models.llm.limitter import RPM, TPM
 from graphgen.utils import set_logger
 from webui.utils import cleanup_workspace, setup_workspace
+
+# DA-ToG imports
+from graphgen.datog_pipeline import DAToGPipeline
+from graphgen.models.taxonomy.taxonomy_tree import TaxonomyTree
+from graphgen.models.storage.networkx_storage import NetworkXStorage
+from graphgen.utils.datog_metrics import DAToGMetrics
 
 
 class GraphGenCLI:
@@ -749,6 +757,124 @@ class GraphGenCLI:
             # 清理工作空间
             cleanup_workspace(graph_gen.working_dir)
 
+    def run_datog(self, args):
+        """运行 DA-ToG 管道"""
+        print("🚀 开始运行 DA-ToG 管道...")
+
+        # Load config
+        with open(args.datog_config, "r", encoding="utf-8") as f:
+            config_data = yaml.safe_load(f)
+
+        datog_config = config_data.get("datog", config_data)
+
+        # Setup working directory
+        log_file, working_dir = setup_workspace(os.path.join(self.root_dir, "cache"))
+        set_logger(log_file, if_stream=True)
+
+        # Get environment variables for LLM client
+        env = {
+            "SYNTHESIZER_BASE_URL": os.environ.get("SYNTHESIZER_BASE_URL", ""),
+            "SYNTHESIZER_MODEL": os.environ.get("SYNTHESIZER_MODEL", ""),
+            "SYNTHESIZER_API_KEY": os.environ.get("SYNTHESIZER_API_KEY", ""),
+            "RPM": os.environ.get("RPM", "1000"),
+            "TPM": os.environ.get("TPM", "50000"),
+        }
+
+        # Setup LLM client
+        tokenizer_instance = Tokenizer(config_data.get("tokenizer", "cl100k_base"))
+        llm_client = OpenAIClient(
+            model_name=env.get("SYNTHESIZER_MODEL", ""),
+            base_url=env.get("SYNTHESIZER_BASE_URL", ""),
+            api_key=env.get("SYNTHESIZER_API_KEY", ""),
+            request_limit=True,
+            rpm=RPM(env.get("RPM", 1000)),
+            tpm=TPM(env.get("TPM", 50000)),
+            tokenizer=tokenizer_instance,
+        )
+
+        # Build or load KG
+        graph_storage = None
+        if args.input_file:
+            print(f"📖 从输入文件构建知识图谱: {args.input_file}")
+            graph_gen = GraphGen(working_dir=working_dir, tokenizer_instance=tokenizer_instance, synthesizer_llm_client=llm_client)
+            graph_gen.clear()
+            read_config = {"input_file": args.input_file}
+            split_config = {
+                "chunk_size": 1024,
+                "chunk_overlap": 50,
+            }
+            graph_gen.insert(read_config=read_config, split_config=split_config)
+            graph_storage = graph_gen.qa_storage
+            print("✅ 知识图谱构建完成")
+        elif args.kg_path:
+            print(f"📖 从文件加载知识图谱: {args.kg_path}")
+            graph_storage = NetworkXStorage()
+            try:
+                graph_storage.load(args.kg_path)
+            except:
+                pass
+        else:
+            print("❌ 错误: 需要提供 --input-file 或 --kg-path")
+            return False
+
+        # Load taxonomy
+        taxonomy_config = datog_config.get("taxonomy", {})
+        taxonomy_path = taxonomy_config.get("path")
+        if not taxonomy_path or not os.path.exists(taxonomy_path):
+            print(f"❌ 错误: 意图树文件不存在: {taxonomy_path}")
+            return False
+
+        print(f"📖 加载意图树: {taxonomy_path}")
+        tree = TaxonomyTree.load(taxonomy_path)
+        print(f"✅ 意图树加载完成: {tree.name} ({tree.size} 节点)")
+
+        # Create and run pipeline
+        print("🔧 初始化 DA-ToG 管道...")
+        pipeline = DAToGPipeline.from_config(args.datog_config, llm_client, graph_storage)
+
+        # Run pipeline
+        target_count = datog_config.get("generation", {}).get("target_qa_pairs", 100)
+        batch_size = datog_config.get("generation", {}).get("batch_size", 10)
+
+        print(f"🎯 目标: 生成 {target_count} 个 QA 对 (批次大小: {batch_size})")
+
+        try:
+            results = asyncio.run(pipeline.run(target_count=target_count, batch_size=batch_size))
+
+            # Determine output file
+            if args.output_file:
+                output_file = args.output_file
+            else:
+                base_name = os.path.splitext(os.path.basename(args.datog_config))[0]
+                output_file = f"{base_name}_datog_output.json"
+
+            # Save results
+            print(f"💾 保存结果到: {output_file}")
+            with open(output_file, "w", encoding="utf-8") as f:
+                json.dump(results, f, ensure_ascii=False, indent=2)
+
+            # Generate metrics report
+            metrics = DAToGMetrics(tree)
+            report = metrics.generate_report(output_file)
+            metrics_file = output_file.replace(".json", "_metrics.json")
+            print(f"📊 保存指标报告到: {metrics_file}")
+            with open(metrics_file, "w", encoding="utf-8") as f:
+                json.dump(report, f, ensure_ascii=False, indent=2)
+
+            print("✅ DA-ToG 管道运行完成!")
+            print(f"📊 意图覆盖率: {report['coverage']['overall_ratio']:.1%}")
+            print(f"📊 生成 QA 对数: {len(results)}")
+            return True
+
+        except Exception as e:
+            print(f"❌ DA-ToG 管道运行出错: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+        finally:
+            cleanup_workspace(working_dir)
+
 
 def create_parser():
     """创建命令行参数解析器"""
@@ -868,6 +994,13 @@ def create_parser():
                            default=int(os.getenv("TPM", "50000")), 
                            help="每分钟 token 数 (默认从环境变量 TPM 读取)")
 
+    # DA-ToG 模式参数组
+    datog_group = parser.add_argument_group("DA-ToG 模式")
+    datog_group.add_argument("--datog-config", help="DA-ToG 配置文件路径")
+    datog_group.add_argument("--datog-input", help="构建知识图谱的输入文件 (与 --datog-config 配合使用)")
+    datog_group.add_argument("--datog-kg", help="现有知识图谱路径")
+    datog_group.add_argument("--datog-output", help="DA-ToG 输出文件路径")
+
     # 测试连接
     parser.add_argument("--test-connection", action="store_true", help="仅测试 API 连接")
 
@@ -930,6 +1063,16 @@ def main():
     # 如果使用 trainee 模型但没有提供 trainee api key，使用主 api key
     if args.use_trainee_model and not args.trainee_api_key:
         args.trainee_api_key = args.api_key
+
+    # DA-ToG 模式检查
+    if hasattr(args, 'datog_config') and args.datog_config:
+        cli = GraphGenCLI()
+        # 设置 datog 参数
+        args.datog_input = getattr(args, 'datog_input', None) or args.input_file
+        args.datog_kg = getattr(args, 'datog_kg', None)
+        args.datog_output = getattr(args, 'datog_output', None) or args.output_file
+        success = cli.run_datog(args)
+        sys.exit(0 if success else 1)
 
     cli = GraphGenCLI()
 

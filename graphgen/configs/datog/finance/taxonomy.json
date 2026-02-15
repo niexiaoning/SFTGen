@@ -1,0 +1,46 @@
+{
+  "name": "Finance Domain Taxonomy",
+  "domain": "finance",
+  "nodes": [
+    {
+      "id": "fin_001",
+      "name": "Market Risk",
+      "description": "The risk of losses in on- and off-balance sheet positions arising from movements in market prices.",
+      "cognitive_dimension": "concept_explanation",
+      "children": [
+        {
+          "id": "fin_001_1",
+          "name": "Interest Rate Risk",
+          "description": "The risk to earnings or capital arising from movements in interest rates.",
+          "cognitive_dimension": "relational_reasoning"
+        },
+        {
+          "id": "fin_001_2",
+          "name": "Equity Price Risk",
+          "description": "The risk that equity prices will change, affecting the value of equity holdings.",
+          "cognitive_dimension": "comparative_analysis"
+        }
+      ]
+    },
+    {
+      "id": "fin_002",
+      "name": "Credit Risk Management",
+      "description": "The process of mitigating losses by understanding the adequacy of a bank's capital and loan loss reserves at any given period.",
+      "cognitive_dimension": "procedural_knowledge",
+      "children": [
+        {
+          "id": "fin_002_1",
+          "name": "Basel III Compliance",
+          "description": "International regulatory framework for banks, focusing on capital adequacy and liquidity.",
+          "cognitive_dimension": "rule_compliance"
+        }
+      ]
+    },
+    {
+      "id": "fin_003",
+      "name": "Fraud Detection",
+      "description": "Identifying and preventing unauthorized or illegal financial activities.",
+      "cognitive_dimension": "anomaly_diagnosis"
+    }
+  ]
+}

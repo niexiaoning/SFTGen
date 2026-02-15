@@ -1,12 +1,15 @@
+from .critic import LLMCritic, RuleCritic
 from .evaluator import LengthEvaluator, MTLDEvaluator, RewardEvaluator, UniEvaluator
 from .generator import (
     AggregatedGenerator,
     AtomicGenerator,
     AtomicQuestionGenerator,
     CoTGenerator,
+    DAToGGenerator,
     MultiHopGenerator,
     TreeStructureGenerator,
 )
+from .graph_adapter import IntentGraphLinker, NetworkXGraphAdapter
 from .kg_builder import LightRAGKGBuilder, MMKGBuilder
 from .llm.batch_llm_wrapper import BatchLLMWrapper
 from .llm.openai_client import OpenAIClient
@@ -26,4 +29,5 @@ from .search.web.bing_search import BingSearch
 from .search.web.google_search import GoogleSearch
 from .splitter import ChineseRecursiveTextSplitter, RecursiveCharacterSplitter
 from .storage import JsonKVStorage, JsonListStorage, NetworkXStorage
+from .taxonomy import AutoTaxonomy, DiversitySampler, TaxonomyTree
 from .tokenizer import Tokenizer

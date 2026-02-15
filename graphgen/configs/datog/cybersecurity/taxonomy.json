@@ -1,0 +1,46 @@
+{
+  "name": "Cybersecurity Domain Taxonomy",
+  "domain": "cybersecurity",
+  "nodes": [
+    {
+      "id": "sec_001",
+      "name": "Network Security",
+      "description": "Protecting the integrity, confidentiality, and accessibility of computer networks and data.",
+      "cognitive_dimension": "concept_explanation",
+      "children": [
+        {
+          "id": "sec_001_1",
+          "name": "Intrusion Detection System (IDS)",
+          "description": "A system that monitors network traffic for suspicious activity and issues alerts.",
+          "cognitive_dimension": "anomaly_diagnosis"
+        },
+        {
+          "id": "sec_001_2",
+          "name": "Zero Trust Architecture",
+          "description": "An IT security model that requires strict identity verification for every person and device trying to access resources.",
+          "cognitive_dimension": "relational_reasoning"
+        }
+      ]
+    },
+    {
+      "id": "sec_002",
+      "name": "Vulnerability Management",
+      "description": "The cyclical practice of identifying, classifying, prioritizing, remediating, and mitigating software vulnerabilities.",
+      "cognitive_dimension": "procedural_knowledge",
+      "children": [
+        {
+          "id": "sec_002_1",
+          "name": "CVSS Scoring",
+          "description": "Common Vulnerability Scoring System used to assess the severity of security vulnerabilities.",
+          "cognitive_dimension": "rule_compliance"
+        }
+      ]
+    },
+    {
+      "id": "sec_003",
+      "name": "Comparison of Encryption Standard",
+      "description": "Evaluating AES, RSA, and DES for different use cases.",
+      "cognitive_dimension": "comparative_analysis"
+    }
+  ]
+}

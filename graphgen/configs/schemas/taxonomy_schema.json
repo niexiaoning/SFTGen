@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "DA-ToG Taxonomy Tree Schema",
+  "description": "Schema for pluggable task taxonomy trees used by DA-ToG pipeline",
+  "type": "object",
+  "required": ["name", "nodes"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Name of the taxonomy tree (e.g., 'financial_risk_control')"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the taxonomy"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Domain this taxonomy belongs to"
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0"
+    },
+    "nodes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/definitions/TaxonomyNode"
+      }
+    }
+  },
+  "definitions": {
+    "TaxonomyNode": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the node"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable name"
+        },
+        "description": {
+          "type": "string",
+          "description": "Detailed description of this taxonomy node"
+        },
+        "cognitive_dimension": {
+          "type": "string",
+          "enum": [
+            "concept_explanation",
+            "relational_reasoning",
+            "rule_compliance",
+            "anomaly_diagnosis",
+            "comparative_analysis",
+            "procedural_knowledge"
+          ],
+          "description": "Cognitive dimension this node maps to"
+        },
+        "parent_id": {
+          "type": ["string", "null"],
+          "description": "ID of the parent node, null for root nodes"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Additional metadata for this node"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/TaxonomyNode"
+          },
+          "description": "Child nodes (alternative to parent_id for nested format)"
+        }
+      }
+    }
+  }
+}

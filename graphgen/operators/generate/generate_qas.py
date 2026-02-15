@@ -7,6 +7,7 @@ from graphgen.models import (
     AtomicGenerator,
     AtomicQuestionGenerator,
     CoTGenerator,
+    DAToGGenerator,
     MultiHopGenerator,
     TreeStructureGenerator,
 )
@@ -469,6 +470,7 @@ async def generate_qas(
                 ),
                 chinese_only=chinese_only,
             ), "hierarchical"),
+            (DAToGGenerator(actual_llm_client, data_format=data_format, default_dimension=generation_config.get("default_dimension", "concept_explanation")), "datog"),
         ]
 
         all_results = []
@@ -698,6 +700,12 @@ async def generate_qas(
                 structure_format=generation_config.get("structure_format", "markdown"),
                 hierarchical_relations=hierarchical_relations,
                 chinese_only=chinese_only,
+            )
+        elif mode == "datog":
+            generator = DAToGGenerator(
+                actual_llm_client,
+                data_format=data_format,
+                default_dimension=generation_config.get("default_dimension", "concept_explanation"),
             )
         else:
             raise ValueError(f"Unsupported generation mode: {mode}")
