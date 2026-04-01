@@ -18,6 +18,10 @@ class TaskConfig(BaseModel):
     trainee_model: str = "Qwen/Qwen2.5-7B-Instruct"
     api_key: str
     trainee_api_key: Optional[str] = None
+    # OpenAI 兼容 API 扩展请求体（JSON 字符串），如智谱 GLM 的 thinking；与 LLM_EXTRA_BODY_JSON 合并逻辑见 task_processor._build_env
+    llm_extra_body_json: str = ""
+    synthesizer_extra_body_json: str = ""
+    trainee_extra_body_json: str = ""
     chunk_size: int = 1024
     chunk_overlap: int = 100
     quiz_samples: int = 2

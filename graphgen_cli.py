@@ -22,6 +22,7 @@ from tqdm import tqdm
 from graphgen.graphgen import GraphGen
 from graphgen.models import OpenAIClient, Tokenizer
 from graphgen.models.llm.limitter import RPM, TPM
+from graphgen.models.llm.llm_env import load_merged_extra_body
 from graphgen.utils import set_logger
 from webui.utils import cleanup_workspace, setup_workspace
 
@@ -85,6 +86,9 @@ class GraphGenCLI:
             rpm=RPM(env.get("RPM", 1000)),
             tpm=TPM(env.get("TPM", 50000)),
             tokenizer=tokenizer_instance,
+            extra_body=load_merged_extra_body(
+                "LLM_EXTRA_BODY_JSON", "SYNTHESIZER_EXTRA_BODY_JSON"
+            ),
         )
 
         trainee_llm_client = OpenAIClient(
@@ -95,6 +99,9 @@ class GraphGenCLI:
             rpm=RPM(env.get("RPM", 1000)),
             tpm=TPM(env.get("TPM", 50000)),
             tokenizer=tokenizer_instance,
+            extra_body=load_merged_extra_body(
+                "LLM_EXTRA_BODY_JSON", "TRAINEE_EXTRA_BODY_JSON"
+            ),
         )
 
         # 创建 KGE-Gen 实例（传递 synthesizer_llm_client 和 trainee_llm_client）
@@ -790,6 +797,9 @@ class GraphGenCLI:
             rpm=RPM(env.get("RPM", 1000)),
             tpm=TPM(env.get("TPM", 50000)),
             tokenizer=tokenizer_instance,
+            extra_body=load_merged_extra_body(
+                "LLM_EXTRA_BODY_JSON", "SYNTHESIZER_EXTRA_BODY_JSON"
+            ),
         )
 
         # Build or load KG

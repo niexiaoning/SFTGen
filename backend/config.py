@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     SYNTHESIZER_MODEL: str = "gpt-3.5-turbo"
     SYNTHESIZER_BASE_URL: str = "https://api.openai.com/v1"
     SYNTHESIZER_API_KEY: str = ""
+    # OpenAI 兼容 API 扩展请求体（JSON 字符串），如智谱 GLM 的 thinking；与 LLM_EXTRA_BODY_JSON 合并
+    LLM_EXTRA_BODY_JSON: str = ""
+    SYNTHESIZER_EXTRA_BODY_JSON: str = ""
+    TRAINEE_EXTRA_BODY_JSON: str = ""
     
     # CORS 配置
     ALLOWED_ORIGINS: List[str] = ["*"]

@@ -12,6 +12,7 @@ import json
 
 from graphgen.graphgen import GraphGen
 from graphgen.models import OpenAIClient, Tokenizer
+from graphgen.models.llm.llm_env import load_merged_extra_body
 from graphgen.models.llm.limitter import RPM, TPM
 from graphgen.utils import set_logger
 from webui.utils import cleanup_workspace, setup_workspace
@@ -73,6 +74,9 @@ class TaskProcessor:
                 rpm=RPM(env.get("RPM", 1000)),
                 tpm=TPM(env.get("TPM", 50000)),
                 tokenizer=tokenizer_instance,
+                extra_body=load_merged_extra_body(
+                    "LLM_EXTRA_BODY_JSON", "SYNTHESIZER_EXTRA_BODY_JSON"
+                ),
             )
             
             trainee_llm_client = OpenAIClient(
@@ -83,6 +87,9 @@ class TaskProcessor:
                 rpm=RPM(env.get("RPM", 1000)),
                 tpm=TPM(env.get("TPM", 50000)),
                 tokenizer=tokenizer_instance,
+                extra_body=load_merged_extra_body(
+                    "LLM_EXTRA_BODY_JSON", "TRAINEE_EXTRA_BODY_JSON"
+                ),
             )
             
             graph_gen = GraphGen(

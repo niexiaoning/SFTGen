@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 from graphgen.graphgen import GraphGen
 from graphgen.models import OpenAIClient, Tokenizer
 from graphgen.models.llm.limitter import RPM, TPM
+from graphgen.models.llm.llm_env import load_merged_extra_body
 from graphgen.utils import set_logger, logger
 from webui.task_manager import task_manager, TaskStatus
 from webui.utils import setup_workspace
@@ -73,6 +74,9 @@ class TaskProcessor:
                 rpm=RPM(config.rpm),
                 tpm=TPM(config.tpm),
                 tokenizer=tokenizer_instance,
+                extra_body=load_merged_extra_body(
+                    "LLM_EXTRA_BODY_JSON", "SYNTHESIZER_EXTRA_BODY_JSON"
+                ),
             )
             trainee_llm_client = OpenAIClient(
                 model_name=config.trainee_model,
@@ -82,6 +86,9 @@ class TaskProcessor:
                 rpm=RPM(config.rpm),
                 tpm=TPM(config.tpm),
                 tokenizer=tokenizer_instance,
+                extra_body=load_merged_extra_body(
+                    "LLM_EXTRA_BODY_JSON", "TRAINEE_EXTRA_BODY_JSON"
+                ),
             )
             
             graph_gen = GraphGen(
@@ -532,5 +539,8 @@ class TaskProcessor:
             "TRAINEE_API_KEY": config.trainee_api_key or config.api_key,
             "RPM": config.rpm,
             "TPM": config.tpm,
+            "LLM_EXTRA_BODY_JSON": config.llm_extra_body_json or "",
+            "SYNTHESIZER_EXTRA_BODY_JSON": config.synthesizer_extra_body_json or "",
+            "TRAINEE_EXTRA_BODY_JSON": config.trainee_extra_body_json or "",
         }
 

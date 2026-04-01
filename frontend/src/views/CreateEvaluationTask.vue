@@ -98,6 +98,16 @@
             <el-input v-model="evalConfig.synthesizer_model" />
           </el-form-item>
 
+          <el-form-item label="LLM 扩展请求体 (JSON)">
+            <el-input
+              v-model="evalConfig.llm_extra_body_json"
+              type="textarea"
+              :rows="3"
+              placeholder='可选。智谱示例：{"thinking":{"type":"disabled","clear_thinking":true}}'
+            />
+            <div class="form-item-tip">OpenAI 兼容扩展字段，与智谱等模型配合使用</div>
+          </el-form-item>
+
           <el-divider content-position="left">限流配置</el-divider>
 
           <el-form-item label="RPM (每分钟请求数)">
@@ -299,6 +309,7 @@ const evalConfig = ref({
   api_key: '',
   synthesizer_url: 'https://api.siliconflow.cn/v1',
   synthesizer_model: 'Qwen/Qwen2.5-7B-Instruct',
+  llm_extra_body_json: '',
   rpm: 500,
   tpm: 100000,
   chunk_size: 1024,
@@ -426,6 +437,7 @@ const submitTask = async () => {
       api_key: evalConfig.value.api_key,
       synthesizer_url: evalConfig.value.synthesizer_url,
       synthesizer_model: evalConfig.value.synthesizer_model,
+      llm_extra_body_json: evalConfig.value.llm_extra_body_json || '',
       rpm: evalConfig.value.rpm,
       tpm: evalConfig.value.tpm,
       chunk_size: evalConfig.value.chunk_size,
@@ -479,6 +491,7 @@ onMounted(() => {
         api_key: savedConfig.api_key || '',
         synthesizer_url: savedConfig.synthesizer_url || 'https://api.siliconflow.cn/v1',
         synthesizer_model: savedConfig.synthesizer_model || 'Qwen/Qwen2.5-7B-Instruct',
+        llm_extra_body_json: savedConfig.llm_extra_body_json || '',
         rpm: savedConfig.rpm || 500,
         tpm: savedConfig.tpm || 100000,
         chunk_size: savedConfig.chunk_size || 1024,

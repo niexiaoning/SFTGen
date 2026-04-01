@@ -7,6 +7,10 @@ export interface TaskConfig {
   trainee_model?: string
   api_key: string
   trainee_api_key?: string
+  /** OpenAI 兼容扩展请求体 (JSON 字符串)，如智谱 thinking；与后端 LLM_EXTRA_BODY_JSON 对应 */
+  llm_extra_body_json?: string
+  synthesizer_extra_body_json?: string
+  trainee_extra_body_json?: string
   chunk_size?: number
   chunk_overlap?: number
   quiz_samples?: number

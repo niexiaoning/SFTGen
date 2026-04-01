@@ -98,6 +98,18 @@
             <el-input v-model="taskConfig.synthesizer_model" />
           </el-form-item>
 
+          <el-form-item label="LLM 扩展请求体 (JSON)">
+            <el-input
+              v-model="taskConfig.llm_extra_body_json"
+              type="textarea"
+              :rows="3"
+              placeholder='可选。智谱 GLM 示例：{"thinking":{"type":"disabled","clear_thinking":true}}'
+            />
+            <div class="form-item-tip">
+              与 OpenAI 兼容的供应商扩展字段（如智谱 thinking）。留空则仅用服务端 .env。
+            </div>
+          </el-form-item>
+
           <el-form-item label="使用 Trainee 模型">
             <el-switch v-model="taskConfig.if_trainee_model" />
           </el-form-item>

@@ -2,6 +2,7 @@
 
 # KGE-Gen 项目启动脚本
 # 简化版本，用于快速启动服务
+# 说明：不再启动 Gradio（webui/app.py）；`webui/` 仍保留供 task_manager/utils 等被后端与 CLI 引用。请使用 Vue 前端（frontend/）。
 
 # 不使用 set -e，允许某些服务启动失败时继续
 set +e
@@ -40,8 +41,8 @@ check_conda() {
         exit 1
     fi
     
-    if ! conda env list | grep -q "^graphgen "; then
-        print_error "Conda 环境 'graphgen' 不存在"
+    if ! conda env list | grep -q "^sftgen "; then
+        print_error "Conda 环境 'sftgen' 不存在"
         print_message "请先创建环境: conda env create -f environment.yml"
         exit 1
     fi
@@ -51,7 +52,11 @@ check_conda() {
 activate_environment() {
     print_message "激活 Conda 环境..."
     eval "$(conda shell.bash hook)"
-    conda activate graphgen
+    conda activate sftgen
+    # 确保 conda 环境中的 node/npm 在 PATH 中（非交互 shell 下有时缺省）
+    if [ -n "${CONDA_PREFIX:-}" ]; then
+        export PATH="$CONDA_PREFIX/bin:$PATH"
+    fi
 }
 
 # 启动后端服务
@@ -67,22 +72,6 @@ start_backend() {
         print_message "后端日志: .backend.log"
     else
         print_error "后端服务启动失败，请查看 .backend.log"
-        return 1
-    fi
-}
-
-# 启动 Gradio Web UI
-start_webui() {
-    print_message "启动 Gradio Web UI..."
-    nohup python webui/app.py > .webui.log 2>&1 &
-    WEBUI_PID=$!
-    echo $WEBUI_PID > .webui.pid
-    sleep 1
-    if kill -0 $WEBUI_PID 2>/dev/null; then
-        print_message "Web UI 已启动 (PID: $WEBUI_PID)"
-        print_message "Web UI 日志: .webui.log"
-    else
-        print_error "Web UI 启动失败，请查看 .webui.log"
         return 1
     fi
 }
@@ -159,7 +148,9 @@ start_frontend() {
         if [ ! -d "frontend" ]; then
             print_warning "frontend 目录不存在，跳过前端服务启动"
         elif ! command -v node &> /dev/null; then
-            print_warning "Node.js 未安装，跳过前端服务启动"
+            print_warning "Node.js 未安装或不在 PATH 中，跳过 Vue 前端（端口 3000）"
+            print_message "在已激活的 sftgen 环境中执行: conda install -c conda-forge nodejs npm"
+            print_message "安装后重新运行 ./start.sh start"
         fi
     fi
 }
@@ -198,37 +189,6 @@ stop_services() {
     # 通过进程名查找并杀死 uvicorn 进程（备用方案）
     if command -v pkill &> /dev/null; then
         pkill -f "uvicorn backend.app:app" 2>/dev/null && print_message "通过进程名停止后端服务"
-    fi
-    
-    # 停止 Web UI 服务 (端口 7860)
-    print_message "停止 Web UI 服务..."
-    if [ -f .webui.pid ]; then
-        WEBUI_PID=$(cat .webui.pid)
-        if ps -p $WEBUI_PID > /dev/null 2>&1 || kill -0 $WEBUI_PID 2>/dev/null; then
-            kill $WEBUI_PID 2>/dev/null || kill -9 $WEBUI_PID 2>/dev/null
-            print_message "Web UI 已停止 (PID: $WEBUI_PID)"
-        fi
-        rm -f .webui.pid
-    fi
-    
-    # 通过端口查找并杀死 Web UI 进程（备用方案）
-    if command -v lsof &> /dev/null; then
-        WEBUI_PIDS=$(lsof -ti:7860 2>/dev/null)
-        if [ -n "$WEBUI_PIDS" ]; then
-            echo "$WEBUI_PIDS" | xargs kill -9 2>/dev/null
-            print_message "通过端口 7860 停止 Web UI 进程"
-        fi
-    elif command -v netstat &> /dev/null; then
-        WEBUI_PIDS=$(netstat -ano | grep :7860 | grep LISTENING | awk '{print $5}' | sort -u 2>/dev/null)
-        if [ -n "$WEBUI_PIDS" ]; then
-            echo "$WEBUI_PIDS" | xargs kill -9 2>/dev/null || taskkill //F //PID $WEBUI_PIDS 2>/dev/null
-            print_message "通过端口 7860 停止 Web UI 进程"
-        fi
-    fi
-    
-    # 通过进程名查找并杀死 gradio 进程（备用方案）
-    if command -v pkill &> /dev/null; then
-        pkill -f "python.*webui/app.py" 2>/dev/null && print_message "通过进程名停止 Web UI 服务"
     fi
     
     # 停止前端服务 (端口 3000)
@@ -288,7 +248,6 @@ show_status() {
     echo ""
     echo "🌐 服务访问地址："
     echo "  - FastAPI 后端: http://localhost:8000"
-    echo "  - Gradio Web UI: http://localhost:7860"
     echo "  - Vue 前端: http://localhost:3000"
     echo ""
     echo "📋 API 文档："
@@ -312,12 +271,6 @@ start_all() {
     if ! start_backend; then
         print_error "后端服务启动失败"
         exit 1
-    fi
-    sleep 2
-    
-    # 启动 Web UI
-    if ! start_webui; then
-        print_warning "Web UI 启动失败，继续启动其他服务"
     fi
     sleep 2
     

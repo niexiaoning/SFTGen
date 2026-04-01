@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from graphgen.graphgen import GraphGen
 from graphgen.models import OpenAIClient, Tokenizer
+from graphgen.models.llm.llm_env import load_merged_extra_body
 from graphgen.models.llm.limitter import RPM, TPM
 from graphgen.utils import set_logger
 from webui.base import WebuiParams
@@ -53,6 +54,9 @@ def init_graph_gen(config: dict, env: dict) -> GraphGen:
         rpm=RPM(env.get("RPM", 1000)),
         tpm=TPM(env.get("TPM", 50000)),
         tokenizer=tokenizer_instance,
+        extra_body=load_merged_extra_body(
+            "LLM_EXTRA_BODY_JSON", "SYNTHESIZER_EXTRA_BODY_JSON"
+        ),
     )
     trainee_llm_client = OpenAIClient(
         model_name=env.get("TRAINEE_MODEL", ""),
@@ -62,6 +66,9 @@ def init_graph_gen(config: dict, env: dict) -> GraphGen:
         rpm=RPM(env.get("RPM", 1000)),
         tpm=TPM(env.get("TPM", 50000)),
         tokenizer=tokenizer_instance,
+        extra_body=load_merged_extra_body(
+            "LLM_EXTRA_BODY_JSON", "TRAINEE_EXTRA_BODY_JSON"
+        ),
     )
 
     graph_gen = GraphGen(
@@ -326,16 +333,14 @@ def get_task_details(task_id: str) -> str:
     return "任务不存在"
 
 
-with gr.Blocks(title="KGE-Gen Demo", theme=gr.themes.Glass(), css=css) as demo:
-    # Header
+with gr.Blocks(title="KGE-Gen Demo") as demo:
+    # Header（Gradio 6+ 已移除 Image 的 show_download_button 等参数）
     gr.Image(
         value=os.path.join(root_dir, "resources", "images", "logo.png"),
         label="KGE-Gen Banner",
         elem_id="banner",
         interactive=False,
         container=False,
-        show_download_button=False,
-        show_fullscreen_button=False,
     )
     lang_btn = gr.Radio(
         choices=[
@@ -1002,4 +1007,11 @@ with gr.Blocks(title="KGE-Gen Demo", theme=gr.themes.Glass(), css=css) as demo:
 
 if __name__ == "__main__":
     demo.queue(api_open=False, default_concurrency_limit=2)
-    demo.launch(server_name="0.0.0.0", server_port=7860, show_api=False)
+    # Gradio 6+ 已移除 launch(show_api=)；用 footer_links 控制页脚（不含 "api" 即不显示 API 文档链接）
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=7861,
+        footer_links=["gradio", "settings"],
+        theme=gr.themes.Glass(),
+        css=css,
+    )

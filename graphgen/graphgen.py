@@ -25,6 +25,7 @@ from graphgen.operators import (
     read_files,
     search_all,
 )
+from graphgen.models.llm.llm_env import load_merged_extra_body
 from graphgen.utils import async_to_sync_method, compute_mm_hash, logger
 
 sys_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -55,6 +56,9 @@ class GraphGen:
                 api_key=os.getenv("SYNTHESIZER_API_KEY"),
                 base_url=os.getenv("SYNTHESIZER_BASE_URL"),
                 tokenizer=self.tokenizer_instance,
+                extra_body=load_merged_extra_body(
+                    "LLM_EXTRA_BODY_JSON", "SYNTHESIZER_EXTRA_BODY_JSON"
+                ),
             )
         )
 
@@ -63,6 +67,9 @@ class GraphGen:
             api_key=os.getenv("TRAINEE_API_KEY"),
             base_url=os.getenv("TRAINEE_BASE_URL"),
             tokenizer=self.tokenizer_instance,
+            extra_body=load_merged_extra_body(
+                "LLM_EXTRA_BODY_JSON", "TRAINEE_EXTRA_BODY_JSON"
+            ),
         )
 
         self.full_docs_storage: JsonKVStorage = JsonKVStorage(

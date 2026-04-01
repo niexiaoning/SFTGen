@@ -61,11 +61,17 @@ class AutoReviewService:
             from graphgen.models.tokenizer.tiktoken_tokenizer import TiktokenTokenizer
             tokenizer = TiktokenTokenizer(model_name="cl100k_base")
             
+            from graphgen.models.llm.llm_env import parse_extra_body_json_strings
+
             client = OpenAIClient(
                 model_name=settings.SYNTHESIZER_MODEL,
                 api_key=settings.SYNTHESIZER_API_KEY,
                 base_url=settings.SYNTHESIZER_BASE_URL,
-                tokenizer=tokenizer
+                tokenizer=tokenizer,
+                extra_body=parse_extra_body_json_strings(
+                    settings.LLM_EXTRA_BODY_JSON,
+                    settings.SYNTHESIZER_EXTRA_BODY_JSON,
+                ),
             )
             return client
         except Exception as e:

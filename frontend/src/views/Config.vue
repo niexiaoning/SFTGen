@@ -40,6 +40,16 @@
               <el-button @click="handleTestConnection" :loading="testing">测试 Synthesizer 连接</el-button>
             </el-form-item>
 
+            <el-form-item label="LLM 扩展请求体 (JSON)">
+              <el-input
+                v-model="config.llm_extra_body_json"
+                type="textarea"
+                :rows="3"
+                placeholder='可选。智谱示例：{"thinking":{"type":"disabled","clear_thinking":true}}'
+              />
+              <span class="form-item-tip">智谱等 OpenAI 兼容接口的额外字段，会写入任务环境变量</span>
+            </el-form-item>
+
             <el-divider />
 
             <el-form-item label="使用 Trainee 模型">

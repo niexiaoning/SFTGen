@@ -44,6 +44,16 @@
               <el-button @click="handleTestConnection" :loading="testing">测试 Synthesizer 连接</el-button>
             </el-form-item>
 
+            <el-form-item label="LLM 扩展请求体 (JSON)">
+              <el-input
+                v-model="config.llm_extra_body_json"
+                type="textarea"
+                :rows="3"
+                placeholder='可选。智谱示例：{"thinking":{"type":"disabled","clear_thinking":true}}'
+              />
+              <span class="form-item-tip">评测任务生成时一并提交</span>
+            </el-form-item>
+
             <el-divider content-position="left">限流配置</el-divider>
 
             <el-form-item label="RPM (每分钟请求数)">
@@ -265,6 +275,7 @@ const defaultConfig = {
   synthesizer_url: 'https://api.siliconflow.cn/v1',
   synthesizer_model: 'Qwen/Qwen2.5-7B-Instruct',
   api_key: '',
+  llm_extra_body_json: '',
   rpm: 500,
   tpm: 100000,
   // 评测集配置

@@ -41,6 +41,7 @@ class OpenAIClient(BaseLLMClient):
         request_limit: bool = False,
         rpm: Optional[RPM] = None,
         tpm: Optional[TPM] = None,
+        extra_body: Optional[Dict[str, Any]] = None,
         **kwargs: Any,
     ):
         super().__init__(**kwargs)
@@ -55,6 +56,7 @@ class OpenAIClient(BaseLLMClient):
         self.request_limit = request_limit
         self.rpm = rpm or RPM()
         self.tpm = tpm or TPM()
+        self.extra_body = extra_body
 
         self.__post_init__()
 
@@ -152,8 +154,11 @@ class OpenAIClient(BaseLLMClient):
         # Limit max_tokens to 1 to avoid long completions
         kwargs["max_tokens"] = 1
 
+        create_kw: Dict[str, Any] = {"model": self.model_name, **kwargs}
+        if self.extra_body:
+            create_kw["extra_body"] = self.extra_body
         completion = await self.client.chat.completions.create(  # pylint: disable=E1125
-            model=self.model_name, **kwargs
+            **create_kw
         )
 
         tokens = get_top_response_tokens(completion)
@@ -184,8 +189,11 @@ class OpenAIClient(BaseLLMClient):
             await self.rpm.wait(silent=True)
             await self.tpm.wait(estimated_tokens, silent=True)
 
+        create_kw = {"model": self.model_name, **kwargs}
+        if self.extra_body:
+            create_kw["extra_body"] = self.extra_body
         completion = await self.client.chat.completions.create(  # pylint: disable=E1125
-            model=self.model_name, **kwargs
+            **create_kw
         )
         if hasattr(completion, "usage"):
             self.token_usage.append(

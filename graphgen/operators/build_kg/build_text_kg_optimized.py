@@ -5,6 +5,7 @@
 from collections import defaultdict
 from typing import List, Optional, Any
 import re
+import asyncio
 
 from graphgen.bases.base_storage import BaseGraphStorage, BaseKVStorage
 from graphgen.bases.datatypes import Chunk
@@ -181,10 +182,37 @@ async def extract_with_prompt_merging(
         # )
         
         # 调用LLM（一次调用处理多个chunks）
-        if kg_builder.batch_manager:
-            response = await kg_builder.batch_manager.add_request(merged_prompt)
-        else:
-            response = await kg_builder.llm_client.generate_answer(merged_prompt)
+        # 注意：部分 OpenAI-兼容服务在限流/异常边界情况下可能返回空 content（而不是抛异常）。
+        # 空响应会导致整批抽取为 0 nodes/0 edges，进而产生“无QA”的误导性失败。
+        # 这里将空响应视为可重试错误，进行短退避重试；最终仍为空则抛出明确异常。
+        response = ""
+        max_empty_retries = 3
+        for attempt in range(1, max_empty_retries + 1):
+            if kg_builder.batch_manager:
+                response = await kg_builder.batch_manager.add_request(merged_prompt)
+            else:
+                response = await kg_builder.llm_client.generate_answer(merged_prompt)
+
+            if response and str(response).strip():
+                break
+
+            wait_s = min(2 ** attempt, 8)
+            logger.warning(
+                "Empty LLM response for merged batch (chunks=%d) on attempt %d/%d; retrying after %.1fs",
+                len(chunk_batch),
+                attempt,
+                max_empty_retries,
+                wait_s,
+            )
+            await asyncio.sleep(wait_s)
+
+        if not response or not str(response).strip():
+            chunk_ids_preview = [c.id for c in chunk_batch[:3]]
+            raise RuntimeError(
+                "LLM returned empty response for merged KG extraction "
+                f"(chunks={len(chunk_batch)}, chunk_ids={chunk_ids_preview}...). "
+                "This usually indicates upstream throttling or an OpenAI-compatible API returning empty content."
+            )
         
         # 只在有响应时记录摘要信息
         if response:

@@ -1,4 +1,4 @@
-name: graphgen
+name: sftgen
 channels:
   - conda-forge
   - defaults

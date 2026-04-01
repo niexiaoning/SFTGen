@@ -365,6 +365,10 @@ async def generate_qas(
     cache_max_size = generation_config.get("cache_max_size", 10000)
     cache_ttl = generation_config.get("cache_ttl", None)
     use_combined_mode = generation_config.get("use_combined_mode", False)
+    hierarchical_relations = generation_config.get(
+        "hierarchical_relations",
+        ["is_a", "subclass_of", "part_of", "includes", "type_of"],
+    )
     use_adaptive_batching = generation_config.get("use_adaptive_batching", False)
     min_batch_size = generation_config.get("min_batch_size", 5)
     max_batch_size = generation_config.get("max_batch_size", 50)
@@ -455,31 +459,39 @@ async def generate_qas(
     use_combined_mode = generation_config.get("use_combined_mode", False)
     
     if mode == "all":
-        # 创建所有四种生成器的列表，并记录对应的 mode
-        generators = [
-            (AtomicGenerator(actual_llm_client, use_multi_template=use_multi_template, template_seed=template_seed, chinese_only=chinese_only), "atomic"),
-            (AggregatedGenerator(actual_llm_client, use_combined_mode=use_combined_mode, chinese_only=chinese_only), "aggregated"),
-            (MultiHopGenerator(actual_llm_client, chinese_only=chinese_only), "multi_hop"),
-            (CoTGenerator(actual_llm_client, use_combined_mode=use_combined_mode, chinese_only=chinese_only), "cot"),
-            (TreeStructureGenerator(
-                actual_llm_client,
-                structure_format=generation_config.get("structure_format", "markdown"),
-                hierarchical_relations=generation_config.get(
-                    "hierarchical_relations",
-                    ["is_a", "subclass_of", "part_of", "includes", "type_of"]
-                ),
-                chinese_only=chinese_only,
-            ), "hierarchical"),
-        ]
-
         all_results = []
         data_format = generation_config["data_format"]
 
         generators = [
-            (AtomicGenerator(actual_llm_client, data_format=data_format), "atomic"),
-            (AggregatedGenerator(actual_llm_client, data_format=data_format), "aggregated"),
-            (MultiHopGenerator(actual_llm_client, data_format=data_format), "multi_hop"),
-            (CoTGenerator(actual_llm_client, data_format=data_format), "cot"),
+            (
+                AtomicGenerator(
+                    actual_llm_client,
+                    use_multi_template=use_multi_template,
+                    template_seed=template_seed,
+                    chinese_only=chinese_only,
+                    hierarchical_relations=hierarchical_relations,
+                ),
+                "atomic",
+            ),
+            (
+                AggregatedGenerator(
+                    actual_llm_client,
+                    use_combined_mode=use_combined_mode,
+                    chinese_only=chinese_only,
+                    hierarchical_relations=hierarchical_relations,
+                ),
+                "aggregated",
+            ),
+            (MultiHopGenerator(actual_llm_client, chinese_only=chinese_only), "multi_hop"),
+            (
+                CoTGenerator(
+                    actual_llm_client,
+                    use_combined_mode=use_combined_mode,
+                    chinese_only=chinese_only,
+                    hierarchical_relations=hierarchical_relations,
+                ),
+                "cot",
+            ),
             (TreeStructureGenerator(
                 actual_llm_client,
                 structure_format=generation_config.get("structure_format", "markdown"),
