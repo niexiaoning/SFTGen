@@ -14,8 +14,8 @@ import networkx as nx
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from graphgen.models import NetworkXStorage, JsonListStorage
-from graphgen.utils import logger
+from textgraphtree.models import NetworkXStorage, JsonListStorage
+from textgraphtree.utils import logger
 
 
 def load_qa_pairs(qa_folder: str) -> List[Dict]:

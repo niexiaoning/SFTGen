@@ -8,8 +8,8 @@ import sys
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(__file__))
 
-from graphgen.models.tokenizer import Tokenizer
-from graphgen.models.tokenizer.tiktoken_tokenizer import get_local_tokenizer_cache_dir
+from textgraphtree.models.tokenizer import Tokenizer
+from textgraphtree.models.tokenizer.tiktoken_tokenizer import get_local_tokenizer_cache_dir
 
 
 def test_local_cache_dir():
@@ -27,7 +27,7 @@ def test_tokenizer():
     print("=" * 60)
     
     # 创建 tokenizer
-    tokenizer = Tokenizer(model_name="cl100k_base")
+    tokenizer = Tokenizer(model_name="cl100k_base")  # pragma: allowlist secret
     
     # 测试文本
     test_text = "Hello, this is a test sentence for tokenization."

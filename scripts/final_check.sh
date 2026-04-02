@@ -31,14 +31,14 @@ check_content() {
 }
 
 echo "1. 检查后端文件..."
-check_file "graphgen/models/partitioner/hierarchical_partitioner.py" "HierarchicalPartitioner 文件"
-check_file "graphgen/models/generator/tree_generator.py" "TreeStructureGenerator 文件"
-check_file "graphgen/templates/generation/hierarchical_generation.py" "Templates 文件"
+check_file "textgraphtree/models/partitioner/hierarchical_partitioner.py" "HierarchicalPartitioner 文件"
+check_file "textgraphtree/models/generator/tree_generator.py" "TreeStructureGenerator 文件"
+check_file "textgraphtree/templates/generation/hierarchical_generation.py" "Templates 文件"
 
 echo ""
 echo "2. 检查后端注册..."
-check_content "hierarchical" "graphgen/operators/partition/partition_kg.py" "Partitioner 注册"
-check_content "hierarchical" "graphgen/operators/generate/generate_qas.py" "Generator 注册"
+check_content "hierarchical" "textgraphtree/operators/partition/partition_kg.py" "Partitioner 注册"
+check_content "hierarchical" "textgraphtree/operators/generate/generate_qas.py" "Generator 注册"
 check_content "qa_ratio_hierarchical" "backend/schemas.py" "Schema 配置"
 
 echo ""

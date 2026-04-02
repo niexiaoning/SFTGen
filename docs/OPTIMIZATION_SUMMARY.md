@@ -1,4 +1,4 @@
-# GraphGen LLM调用优化实施总结
+# TextGraphTree LLM调用优化实施总结
 
 ## 📅 实施日期
 2025-11-27
@@ -13,10 +13,10 @@
 ### 1. 配置文件优化 ⭐⭐⭐⭐⭐
 
 **修改文件**：
-- `graphgen/configs/atomic_config.yaml`
-- `graphgen/configs/aggregated_config.yaml`
-- `graphgen/configs/cot_config.yaml`
-- `graphgen/configs/multi_hop_config.yaml`
+- `textgraphtree/configs/atomic_config.yaml`
+- `textgraphtree/configs/aggregated_config.yaml` <!-- pragma: allowlist secret -->
+- `textgraphtree/configs/cot_config.yaml`
+- `textgraphtree/configs/multi_hop_config.yaml`
 
 **优化参数**：
 ```yaml
@@ -72,7 +72,7 @@ quiz_and_judge:
 ### 2. Prompt合并优化（KG抽取阶段）⭐⭐⭐⭐⭐
 
 **新增文件**：
-- `graphgen/operators/build_kg/build_text_kg_optimized.py`
+- `textgraphtree/operators/build_kg/build_text_kg_optimized.py`
 
 **核心原理**：
 ```
@@ -120,7 +120,7 @@ chunk5 → LLM调用5 → 结果5
    - 保证在任何情况下都能得到结果
 
 **集成方式**：
-- 修改 `graphgen/graphgen.py` 
+- 修改 `textgraphtree/textgraphtree.py` 
 - 根据配置自动选择优化版本或原始版本
 - 向后兼容：`enable_prompt_merging: false` 可退回原始行为
 
@@ -238,16 +238,16 @@ max_batch_size: 50
 
 ```bash
 # 使用atomic模式（已优化）
-python graphgen_cli.py --config graphgen/configs/atomic_config.yaml
+python textgraphtree_cli.py --config textgraphtree/configs/atomic_config.yaml
 
 # 使用aggregated模式（已优化）
-python graphgen_cli.py --config graphgen/configs/aggregated_config.yaml
+python textgraphtree_cli.py --config textgraphtree/configs/aggregated_config.yaml <!-- pragma: allowlist secret -->
 
 # 使用cot模式（已优化）
-python graphgen_cli.py --config graphgen/configs/cot_config.yaml
+python textgraphtree_cli.py --config textgraphtree/configs/cot_config.yaml
 
 # 使用multi_hop模式（已优化）
-python graphgen_cli.py --config graphgen/configs/multi_hop_config.yaml
+python textgraphtree_cli.py --config textgraphtree/configs/multi_hop_config.yaml
 ```
 
 ### 自定义优化参数
@@ -321,7 +321,7 @@ enable_prompt_merging: false
 
 ```bash
 # 清理所有缓存
-python graphgen_cli.py --clear-cache
+python textgraphtree_cli.py --clear-cache
 
 # 或手动删除
 rm -rf cache/extraction_cache
@@ -368,7 +368,7 @@ Cache hit rate: 45% (450/1000 requests)
 1. 检查是否真正启用了优化：
    ```bash
    grep "Prompt Merging" logs/*.log
-   grep "use_combined_mode" graphgen/configs/*.yaml
+   grep "use_combined_mode" textgraphtree/configs/*.yaml
    ```
 
 2. 查看缓存命中率：
@@ -420,7 +420,7 @@ Cache hit rate: 45% (450/1000 requests)
 
 - [LLM调用分析文档](./LLM_CALL_ANALYSIS.md) - 详细的调用分析和理论基础
 - [解析逻辑改进文档](./PARSING_IMPROVEMENT.md) - 解析器鲁棒性改进
-- [配置文件示例](../graphgen/configs/) - 各种模式的配置示例
+- [配置文件示例](../textgraphtree/configs/) - 各种模式的配置示例
 
 ---
 
@@ -451,5 +451,5 @@ Cache hit rate: 45% (450/1000 requests)
 
 **优化实施完成！** 🎉
 
-现在GraphGen将以更高的效率、更低的成本运行！
+现在TextGraphTree将以更高的效率、更低的成本运行！
 

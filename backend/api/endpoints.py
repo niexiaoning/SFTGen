@@ -409,7 +409,7 @@ async def get_evaluation_dataset(
     """获取任务的评测集（需要登录）"""
     import os
     import json
-    from webui.task_manager import task_manager
+    from backend.runtime import task_manager
     
     # 获取任务信息
     task = task_manager.get_task(task_id)
@@ -446,7 +446,7 @@ async def get_evaluation_stats(
     """获取评测集统计信息（需要登录）"""
     import os
     import json
-    from webui.task_manager import task_manager
+    from backend.runtime import task_manager
     
     # 获取任务信息
     task = task_manager.get_task(task_id)
@@ -497,7 +497,7 @@ async def download_evaluation_dataset(
         format: 下载格式，'json' 或 'csv'
     """
     import os
-    from webui.task_manager import task_manager
+    from backend.runtime import task_manager
     
     # 获取任务信息
     task = task_manager.get_task(task_id)

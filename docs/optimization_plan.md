@@ -18,7 +18,7 @@ Enhance SFTGen to better handle hierarchical domain knowledge (e.g., taxonomy, p
 
 We need a dedicated partitioner that groups nodes based on hierarchical relationships rather than just density or random walks.
 
-#### [NEW] `graphgen/models/partitioner/hierarchical_partitioner.py`
+#### [NEW] `textgraphtree/models/partitioner/hierarchical_partitioner.py`
 
 - Implement `HierarchicalPartitioner` class inheriting from `BasePartitioner`.
 - **Logic**:
@@ -27,7 +27,7 @@ We need a dedicated partitioner that groups nodes based on hierarchical relation
   - **Chain Grouping (Vertical)**: Sample paths of length 2-3 specifically along hierarchical edges (e.g., Grandparent -> Parent -> Child).
 - **Output**: Returns a list of `Community` objects optimized for hierarchical reasoning.
 
-#### [MODIFY] `graphgen/operators/partition/partition_kg.py`
+#### [MODIFY] `textgraphtree/operators/partition/partition_kg.py`
 
 - Register the new `hierarchical` method in `partition_kg` function.
 - Add logic to instantiate `HierarchicalPartitioner` when `method="hierarchical"`.
@@ -36,7 +36,7 @@ We need a dedicated partitioner that groups nodes based on hierarchical relation
 
 A new generator that serializes the subgraph into a structured format before feeding it to the LLM.
 
-#### [NEW] `graphgen/models/generator/tree_generator.py`
+#### [NEW] `textgraphtree/models/generator/tree_generator.py`
 
 - Implement `TreeStructureGenerator` class inheriting from `BaseGenerator`.
 - **Method `_build_tree_context(batch)`**:
@@ -48,7 +48,7 @@ A new generator that serializes the subgraph into a structured format before fee
   - Uses the structured context.
   - Selects specific prompts for comparison ("Compare A and B") or inheritance logic ("Why does C have property P?").
 
-#### [MODIFY] `graphgen/operators/generate/generate_qas.py`
+#### [MODIFY] `textgraphtree/operators/generate/generate_qas.py`
 
 - Add support for `mode="tree"` (or `hierarchical`).
 - Instantiate `TreeStructureGenerator` when this mode is selected.
@@ -56,7 +56,7 @@ A new generator that serializes the subgraph into a structured format before fee
 
 ### 3. Template Layer: Structure-Aware Prompts
 
-#### [MODIFY] `graphgen/templates/__init__.py` (and related files)
+#### [MODIFY] `textgraphtree/templates/__init__.py` (and related files)
 
 - Add `HIERARCHICAL_GENERATION_PROMPT`.
   - **Focus**: "You are analyzing a hierarchical knowledge tree..."
@@ -67,7 +67,7 @@ A new generator that serializes the subgraph into a structured format before fee
 
 ### 4. Configuration Updates
 
-#### [MODIFY] `graphgen/graphgen.py` (or CLI entry points)
+#### [MODIFY] `textgraphtree/textgraphtree.py` (or CLI entry points)
 
 - Ensure new configuration options (`hierarchical_relations`, `structure_format`) can be passed down to the partitioner and generator.
 
@@ -142,7 +142,7 @@ This section outlines the testing strategy to ensure the reliability and correct
 - **Objective**: Run the full pipeline with `partition_method="hierarchical"` and `mode="tree"`.
 - **Input**: A small knowledge graph file (`tests/data/taxonomy_graph.json`).
 - **Procedure**:
-  1.  Initialize `GraphGen`.
+  1.  Initialize `TextGraphTree`.
   2.  Run `partition_kg`.
   3.  Run `generate_qas`.
 - **Expected Output**:

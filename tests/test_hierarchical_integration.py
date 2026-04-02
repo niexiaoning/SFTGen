@@ -1,7 +1,7 @@
 """End-to-end integration test for hierarchical generation."""
 
 import asyncio
-from graphgen.models import HierarchicalPartitioner, TreeStructureGenerator
+from textgraphtree.models import HierarchicalPartitioner, TreeStructureGenerator
 
 
 async def test_integration():

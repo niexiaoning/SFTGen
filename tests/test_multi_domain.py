@@ -1,5 +1,5 @@
 """
-End-to-end validation for multi_domain DA-ToG.
+End-to-end validation for multi_domain TGT.
 
 Verifies that the same pipeline code can handle different domain
 configurations (Finance and Cybersecurity).
@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from graphgen.datog_pipeline import DAToGPipeline
+from textgraphtree.tgt_pipeline import TGTPipeline
 
 
 class MockGraphStorage:
@@ -36,7 +36,7 @@ class TestMultiDomainValidation:
         graph = MockGraphStorage()
         
         # Load pipeline from config
-        pipeline = DAToGPipeline.from_config(
+        pipeline = TGTPipeline.from_config(
             config_path=config_path,
             llm_client=mock_llm,
             graph_storage=graph,
@@ -46,17 +46,17 @@ class TestMultiDomainValidation:
         results = await pipeline.run(target_count=2, batch_size=5)
         
         assert len(results) > 0
-        assert results[0]["metadata"]["pipeline"] == "datog"
+        assert results[0]["metadata"]["pipeline"] == "tgt"
         return results
 
     def test_finance_domain(self):
         async def _run():
-            results = await self._test_domain("graphgen/configs/datog/finance/datog_config.yaml")
+            results = await self._test_domain("textgraphtree/configs/tgt/finance/tgt_config.yaml")
             assert len(results) > 0
         asyncio.run(_run())
 
     def test_cybersecurity_domain(self):
         async def _run():
-            results = await self._test_domain("graphgen/configs/datog/cybersecurity/datog_config.yaml")
+            results = await self._test_domain("textgraphtree/configs/tgt/cybersecurity/tgt_config.yaml")
             assert len(results) > 0
         asyncio.run(_run())

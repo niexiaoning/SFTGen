@@ -13,7 +13,7 @@ import json
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from webui.task_manager import task_manager, TaskStatus
+from backend.runtime import task_manager, TaskStatus
 
 
 def fix_failed_task(task_id: str):

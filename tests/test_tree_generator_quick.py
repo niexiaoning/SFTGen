@@ -1,6 +1,6 @@
 """Test tree structure generator."""
 
-from graphgen.models import TreeStructureGenerator
+from textgraphtree.models import TreeStructureGenerator
 
 
 def test_tree_generator_serialization():

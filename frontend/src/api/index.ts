@@ -9,11 +9,11 @@ import type {
   BatchReviewRequest,
   AutoReviewRequest,
   ReviewStats,
-  DAToGConfig,
-  DAToGPipelineConfig,
-  DAToGTaxonomy,
+  TGTConfig,
+  TGTPipelineConfig,
+  TGTTaxonomy,
   PipelineTaskStatus,
-  DAToGMetricsReport
+  TGMetricsReport
 } from './types'
 
 export const api = {
@@ -164,52 +164,52 @@ export const api = {
     })
   },
 
-  // ==================== DA-ToG 相关 ====================
+  // ==================== TGT 相关 ====================
 
-  datog: {
-    // 保存 DA-ToG 配置
-    saveConfig(config: DAToGConfig) {
-      return request.post<TaskResponse>('/datog/config/save', config)
+  tgt: {
+    // 保存 TGT 配置
+    saveConfig(config: TGTConfig) {
+      return request.post<TaskResponse>('/tgt/config/save', config)
     },
 
-    // 加载 DA-ToG 配置
+    // 加载 TGT 配置
     loadConfig() {
-      return request.get<TaskResponse<DAToGConfig>>('/datog/config/load')
+      return request.get<TaskResponse<TGTConfig>>('/tgt/config/load')
     },
 
     // 保存意图树
     saveTaxonomy(data: { domain: string; taxonomy_path: string; [key: string]: any }) {
-      return request.post<TaskResponse<DAToGTaxonomy>>('/datog/taxonomy/save', data)
+      return request.post<TaskResponse<TGTTaxonomy>>('/tgt/taxonomy/save', data)
     },
 
     // 获取所有意图树
     listTaxonomies() {
-      return request.get<{success: boolean; taxonomies: DAToGTaxonomy[]; message?: string}>('/datog/taxonomy/list')
+      return request.get<{success: boolean; taxonomies: TGTTaxonomy[]; message?: string}>('/tgt/taxonomy/list')
     },
 
     // 获取单个意图树
     getTaxonomy(taxonomyId: string) {
-      return request.get<TaskResponse<any>>(`/datog/taxonomy/${taxonomyId}`)
+      return request.get<TaskResponse<any>>(`/tgt/taxonomy/${taxonomyId}`)
     },
 
     // 更新意图树
     updateTaxonomy(taxonomyId: string, data: any) {
-      return request.put<TaskResponse>(`/datog/taxonomy/${taxonomyId}`, data)
+      return request.put<TaskResponse>(`/tgt/taxonomy/${taxonomyId}`, data)
     },
 
     // 删除意图树
     deleteTaxonomy(taxonomyId: string) {
-      return request.delete<TaskResponse>(`/datog/taxonomy/${taxonomyId}`)
+      return request.delete<TaskResponse>(`/tgt/taxonomy/${taxonomyId}`)
     },
 
-    // 运行 DA-ToG 管道
-    runPipeline(config: DAToGPipelineConfig) {
-      return request.post<TaskResponse<PipelineTaskStatus>>('/datog/pipeline/run', config)
+    // 运行 TGT 管道
+    runPipeline(config: TGTPipelineConfig) {
+      return request.post<TaskResponse<PipelineTaskStatus>>('/tgt/pipeline/run', config)
     },
 
     // 获取管道运行状态
     getPipelineStatus(taskId: string) {
-      return request.get<TaskResponse<PipelineTaskStatus>>(`/datog/pipeline/status/${taskId}`)
+      return request.get<TaskResponse<PipelineTaskStatus>>(`/tgt/pipeline/status/${taskId}`)
     }
   },
 

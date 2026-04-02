@@ -1,5 +1,5 @@
 """
-Tests for DA-ToG Graph Adapter: IntentGraphLinker and NetworkXGraphAdapter.
+Tests for TGT Graph Adapter: IntentGraphLinker and NetworkXGraphAdapter.
 
 Tests cover:
 - IntentGraphLinker: keyword extraction, scoring, entity linking
@@ -12,8 +12,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from graphgen.models.graph_adapter.intent_graph_linker import IntentGraphLinker
-from graphgen.models.graph_adapter.networkx_adapter import NetworkXGraphAdapter
+from textgraphtree.models.graph_adapter.intent_graph_linker import IntentGraphLinker
+from textgraphtree.models.graph_adapter.networkx_adapter import NetworkXGraphAdapter
 
 
 # ═══════════════════════════════════════════════════════════════════

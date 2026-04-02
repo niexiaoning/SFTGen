@@ -51,7 +51,7 @@ class ReviewService:
         """加载任务生成的数据"""
         try:
             # 首先尝试从 task_manager 获取任务信息
-            from webui.task_manager import task_manager
+            from backend.runtime import task_manager
             task = task_manager.get_task(task_id)
             
             if not task:

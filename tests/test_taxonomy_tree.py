@@ -1,5 +1,5 @@
 """
-Tests for DA-ToG Taxonomy Tree, Diversity Sampler, and Auto Taxonomy.
+Tests for TGT Taxonomy Tree, Diversity Sampler, and Auto Taxonomy.
 
 Tests cover:
 - TaxonomyTree: loading (flat/nested, JSON/YAML), validation, traversal, serialization
@@ -16,9 +16,9 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from graphgen.models.taxonomy.auto_taxonomy import AutoTaxonomy
-from graphgen.models.taxonomy.diversity_sampler import DiversitySampler
-from graphgen.models.taxonomy.taxonomy_tree import (
+from textgraphtree.models.taxonomy.auto_taxonomy import AutoTaxonomy
+from textgraphtree.models.taxonomy.diversity_sampler import DiversitySampler
+from textgraphtree.models.taxonomy.taxonomy_tree import (
     COGNITIVE_DIMENSIONS,
     TaxonomyNode,
     TaxonomyTree,

@@ -1,6 +1,6 @@
-# KGE-Gen (DA-ToG) 可行性验证实验规划
+# TextGraphTree (TGT) 可行性验证实验规划
 
-> **目标**：初步验证 DA-ToG（树 + 图 + Critic）相比 GraphGen（仅图）和 Condor（仅树）的提升，判断新论文的可行性。
+> **目标**：初步验证 TGT（树 + 图 + Critic）相比 TextGraphTree（仅图）和 Condor（仅树）的提升，判断新论文的可行性。
 >
 > **原则**：快速、低成本、能给出明确信号。不追求完美，先跑通再迭代。
 
@@ -12,8 +12,8 @@
 
 | 编号 | 方法 | 数据来源 | 说明 |
 |------|------|----------|------|
-| **M1** | GraphGen | 自己生成 | 仅用 KG + 分区 + QA 生成，代码库已有 |
-| **M2** | DA-ToG (Ours) | 自己生成 | 分类树 + KG + Critic，代码库已有 |
+| **M1** | TextGraphTree | 自己生成 | 仅用 KG + 分区 + QA 生成，代码库已有 |
+| **M2** | TGT (Ours) | 自己生成 | 分类树 + KG + Critic，代码库已有 |
 | **M3** | Condor | 公开数据 | 从 HuggingFace 下载 Condor-SFT-20K |
 | **M0** | Self-Instruct (可选) | 自己生成 | 直接让 LLM 从文档生成 QA，作为最弱 baseline |
 
@@ -30,10 +30,10 @@
 
 ### 2.0 新项目的核心差异化能力
 
-在设计数据集之前，需要明确新项目相比 GraphGen 的两层改进：
+在设计数据集之前，需要明确新项目相比 TextGraphTree 的两层改进：
 
 1. **图分区层**：新增 `HierarchicalPartitioner`，能识别层级关系（`is_a`, `subclass_of`, `part_of` 等），进行横向兄弟分组和纵向链式采样，生成对比类和分类类 QA
-2. **DA-ToG 框架层**：引入 Condor 式分类树（Macro-Intent）+ 认知维度模板 + Logic-Critic 验证
+2. **TGT 框架层**：引入 Condor 式分类树（Macro-Intent）+ 认知维度模板 + Logic-Critic 验证
 
 因此，**层级结构越明显的文档，新项目的优势越大**。但为论文可信度，需同时包含有利和不利场景。
 
@@ -43,12 +43,12 @@
 
 | 分组 | 层级特征 | 文档类型 | 预期结果 | 论文中的作用 |
 |------|----------|----------|----------|-------------|
-| **组 A：强层级** | 文本包含显式分类体系、总-分结构 | 教科书、分类标准、技术规范 | DA-ToG >> GraphGen | 证明核心优势 |
-| **组 B：弱层级** | 文本为平铺叙事，无明显层级 | 新闻报道、研究论文、事实描述 | DA-ToG ≈ GraphGen | 证明不会更差 |
-| **组 C：混合型** | 部分内容有层级，部分为平铺 | 领域综述、维基百科词条 | DA-ToG > GraphGen | 证明真实场景有效 |
+| **组 A：强层级** | 文本包含显式分类体系、总-分结构 | 教科书、分类标准、技术规范 | TGT >> TextGraphTree | 证明核心优势 |
+| **组 B：弱层级** | 文本为平铺叙事，无明显层级 | 新闻报道、研究论文、事实描述 | TGT ≈ TextGraphTree | 证明不会更差 |
+| **组 C：混合型** | 部分内容有层级，部分为平铺 | 领域综述、维基百科词条 | TGT > TextGraphTree | 证明真实场景有效 |
 
 论文叙事目标：
-> "在层级知识丰富的场景中，DA-ToG 显著优于 GraphGen（+X%）；在层级知识较少的场景中，DA-ToG 与 GraphGen 持平，不引入额外开销。"
+> "在层级知识丰富的场景中，TGT 显著优于 TextGraphTree（+X%）；在层级知识较少的场景中，TGT 与 TextGraphTree 持平，不引入额外开销。"
 
 ### 2.2 各组推荐数据源
 
@@ -88,7 +88,7 @@
 
 - 选择 **金融** 或 **计算机科学**（与已有 taxonomy.json 对齐最方便）
 - 准备 30-50 篇文档，总量 30K-50K tokens
-- 用同一批文档分别跑 GraphGen 和 DA-ToG
+- 用同一批文档分别跑 TextGraphTree 和 TGT
 - 如果组 A 上没有优势 → 方法有问题，需要回去改
 - 如果组 A 上有明显优势 → 再补组 B、C 做完整论文实验
 
@@ -97,7 +97,7 @@
 | 类型 | 原因 |
 |------|------|
 | 纯叙事/新闻 | 没有层级关系，两种方法差异不大 |
-| 纯事实罗列 | 实体之间主要是横向关联，GraphGen 本来就擅长 |
+| 纯事实罗列 | 实体之间主要是横向关联，TextGraphTree 本来就擅长 |
 | 对话/评论 | 非知识型文本，提取不出有意义的 KG |
 | 过短文本（<200 tokens） | 构建不出有意义的知识图谱 |
 
@@ -110,20 +110,20 @@
 #### 输入文档
 - **首批实验**：组 A 的 1 个领域（建议金融），30-50 篇，30K-50K tokens
 - **完整实验**：组 A + B + C 各 1 个领域，每组 30-50 篇
-- **GraphGen 和 DA-ToG 必须用同一批文档**
+- **TextGraphTree 和 TGT 必须用同一批文档**
 
 #### 各方法生成数据
 
 ```bash
-# M1: GraphGen —— 文档 → KG → 分区(BFS/ECE) → QA
+# M1: TextGraphTree —— 文档 → KG → 分区(BFS/ECE) → QA
 source /workspace/.venv/bin/activate
-python graphgen_cli.py -i <input_file> -k <API_KEY> \
-    --output experiments/data/graphgen_output/
+python textgraphtree_cli.py -i <input_file> -k <API_KEY> \
+    --output experiments/data/textgraphtree_output/
 
-# M2: DA-ToG —— 文档 → KG + 分类树 + HierarchicalPartitioner + Critic → QA
+# M2: TGT —— 文档 → KG + 分类树 + HierarchicalPartitioner + Critic → QA
 python scripts/run_domain.py \
-    --domain graphgen/configs/datog/finance \
-    --output experiments/data/datog_output/
+    --domain textgraphtree/configs/tgt/finance \
+    --output experiments/data/tgt_output/
 
 # M3: Condor —— 直接下载
 # huggingface-cli download internlm/Condor-SFT-20K \
@@ -139,13 +139,13 @@ python scripts/run_domain.py \
 
 | 维度 | 指标 | 计算方法 | 预期结果 |
 |------|------|----------|----------|
-| **多样性** | MTLD 词汇多样性 | `graphgen/models/evaluator/mtld_evaluator.py` | DA-ToG ≥ GraphGen |
-| **多样性** | 问题去重率 | 问题文本 hash 后统计唯一率 | DA-ToG 更高 |
-| **覆盖广度** | 分类树节点覆盖率 | `DAToGMetrics.calculate_coverage()` | DA-ToG >> GraphGen |
-| **覆盖广度** | 认知维度分布均匀度 | `DAToGMetrics.calculate_distribution()` | DA-ToG 更均匀 |
-| **事实深度** | 平均涉及实体数 | 统计 QA metadata 中的 graph 信息 | DA-ToG ≈ GraphGen |
-| **事实深度** | 平均推理跳数 | 子图最短路径统计 | DA-ToG ≈ GraphGen |
-| **质量下限** | Critic 通过率 | DA-ToG 的 RuleCritic 通过/拒绝比例 | DA-ToG 有数据，GraphGen 无 |
+| **多样性** | MTLD 词汇多样性 | `textgraphtree/models/evaluator/mtld_evaluator.py` | TGT ≥ TextGraphTree |
+| **多样性** | 问题去重率 | 问题文本 hash 后统计唯一率 | TGT 更高 |
+| **覆盖广度** | 分类树节点覆盖率 | `TGMetrics.calculate_coverage()` | TGT >> TextGraphTree |
+| **覆盖广度** | 认知维度分布均匀度 | `TGMetrics.calculate_distribution()` | TGT 更均匀 |
+| **事实深度** | 平均涉及实体数 | 统计 QA metadata 中的 graph 信息 | TGT ≈ TextGraphTree |
+| **事实深度** | 平均推理跳数 | 子图最短路径统计 | TGT ≈ TextGraphTree |
+| **质量下限** | Critic 通过率 | TGT 的 RuleCritic 通过/拒绝比例 | TGT 有数据，TextGraphTree 无 |
 | **长度分布** | 平均问题/答案长度 | tokenizer 统计 | 三者对比 |
 
 ### 3.3 人工/LLM-as-Judge 评测
@@ -168,21 +168,21 @@ python scripts/run_domain.py \
 | 指标 | 计算方法 | 说明 |
 |------|----------|------|
 | **层级关系识别率** | 统计 KG 中被标记为 is_a/subclass_of/part_of 的边占总边数的比例 | 越高说明文档层级越丰富 |
-| **兄弟分组社区数** | `HierarchicalPartitioner` 输出中 `type=sibling_group` 的社区数量 | DA-ToG 独有，GraphGen 为 0 |
-| **纵向链式社区数** | `HierarchicalPartitioner` 输出中 `type=vertical_chain` 的社区数量 | DA-ToG 独有，GraphGen 为 0 |
-| **对比类 QA 占比** | 人工/LLM 标注生成的 QA 中包含"对比""区别""不同"等对比性问题的比例 | DA-ToG 应更高 |
-| **分类类 QA 占比** | 人工/LLM 标注生成的 QA 中包含"属于""分为""类型"等分类性问题的比例 | DA-ToG 应更高 |
+| **兄弟分组社区数** | `HierarchicalPartitioner` 输出中 `type=sibling_group` 的社区数量 | TGT 独有，TextGraphTree 为 0 |
+| **纵向链式社区数** | `HierarchicalPartitioner` 输出中 `type=vertical_chain` 的社区数量 | TGT 独有，TextGraphTree 为 0 |
+| **对比类 QA 占比** | 人工/LLM 标注生成的 QA 中包含"对比""区别""不同"等对比性问题的比例 | TGT 应更高 |
+| **分类类 QA 占比** | 人工/LLM 标注生成的 QA 中包含"属于""分为""类型"等分类性问题的比例 | TGT 应更高 |
 
 这组指标按数据集分组（A/B/C）分别统计，预期：
-- **组 A（强层级）**：DA-ToG 层级指标远高于 GraphGen
+- **组 A（强层级）**：TGT 层级指标远高于 TextGraphTree
 - **组 B（弱层级）**：两者层级指标都低，差异不大
-- **组 C（混合）**：DA-ToG 层级指标中等偏高
+- **组 C（混合）**：TGT 层级指标中等偏高
 
-### 3.5 GraphGen vs DA-ToG 核心对比表（模板）
+### 3.5 TextGraphTree vs TGT 核心对比表（模板）
 
 按数据集分组分别填写，以下为单组模板：
 
-| 指标 | GraphGen (M1) | DA-ToG (M2) | 提升 |
+| 指标 | TextGraphTree (M1) | TGT (M2) | 提升 |
 |------|---------------|-------------|------|
 | MTLD ↑ | | | |
 | 问题唯一率 ↑ | | | |
@@ -203,7 +203,7 @@ python scripts/run_domain.py \
 
 Condor 未开源代码，对比方式：
 
-1. **数据层面**：下载 Condor-SFT-20K，用同样的自动化指标（MTLD、长度分布、去重率）直接和 DA-ToG 生成的数据对比
+1. **数据层面**：下载 Condor-SFT-20K，用同样的自动化指标（MTLD、长度分布、去重率）直接和 TGT 生成的数据对比
 2. **效果层面**：留到 Phase 2，用微调后的模型在 Benchmark 上对比
 3. **论文写法**：如有指标无法直接对比，引用 Condor 论文中的报告数字，注明"Results cited from original paper"
 
@@ -226,8 +226,8 @@ Condor 未开源代码，对比方式：
 | 组别 | 数据 |
 |------|------|
 | M0 (可选) | Self-Instruct 生成的 QA |
-| M1 | GraphGen 生成的 QA |
-| M2 | DA-ToG 生成的 QA |
+| M1 | TextGraphTree 生成的 QA |
+| M2 | TGT 生成的 QA |
 | M3 | Condor-SFT-20K（抽取等量子集） |
 
 ### 4.3 评测 Benchmark
@@ -241,7 +241,7 @@ Condor 未开源代码，对比方式：
 
 ### 4.4 下游效果对比表（模板）
 
-| Benchmark | Base (M0) | GraphGen (M1) | DA-ToG (M2) | Condor (M3) |
+| Benchmark | Base (M0) | TextGraphTree (M1) | TGT (M2) | Condor (M3) |
 |-----------|-----------|----------------|-------------|-------------|
 | C-Eval | | | | |
 | MMLU | | | | |
@@ -255,11 +255,11 @@ Condor 未开源代码，对比方式：
 
 | 消融组 | 设置 | 验证什么 |
 |--------|------|----------|
-| DA-ToG w/o Critic | 去掉 Logic-Critic 层 | Critic 的价值 |
-| DA-ToG w/o Tree | 去掉 Macro-Intent 层 | 分类树的价值 |
-| DA-ToG w/o Graph | 去掉 Micro-Fact 层 | 图谱的价值 |
-| DA-ToG w/o ECE | 随机采样替换 ECE | 知识盲点识别的价值 |
-| DA-ToG w/o HierPartitioner | 用 BFS 替换 HierarchicalPartitioner | 层级分区的价值（在组 A 上做） |
+| TGT w/o Critic | 去掉 Logic-Critic 层 | Critic 的价值 |
+| TGT w/o Tree | 去掉 Macro-Intent 层 | 分类树的价值 |
+| TGT w/o Graph | 去掉 Micro-Fact 层 | 图谱的价值 |
+| TGT w/o ECE | 随机采样替换 ECE | 知识盲点识别的价值 |
+| TGT w/o HierPartitioner | 用 BFS 替换 HierarchicalPartitioner | 层级分区的价值（在组 A 上做） |
 
 消融实验建议**在组 A（强层级）文档上做**，因为层级相关模块在这类数据上效果最明显，消融后的下降也最显著。
 
@@ -276,7 +276,7 @@ Condor 未开源代码，对比方式：
 
 ### 6.2 关于合成器模型
 
-- GraphGen 和 DA-ToG **必须用同一个 LLM**（如 Qwen-2.5-72B 或 GPT-4）
+- TextGraphTree 和 TGT **必须用同一个 LLM**（如 Qwen-2.5-72B 或 GPT-4）
 - 在 `.env` 中配置 `SYNTHESIZER_MODEL`、`SYNTHESIZER_BASE_URL`、`SYNTHESIZER_API_KEY`
 
 ### 6.3 关于数据集选择的原则
@@ -291,13 +291,13 @@ Condor 未开源代码，对比方式：
 
 | 工具 | 状态 | 说明 |
 |------|------|------|
-| `graphgen/evaluate.py` 评测主脚本 | ✅ 已实现 | 一键跑 MTLD + UniEval + 奖励模型，需要 GPU |
+| `textgraphtree/evaluate.py` 评测主脚本 | ✅ 已实现 | 一键跑 MTLD + UniEval + 奖励模型，需要 GPU |
 | `MTLDEvaluator` | ✅ 已实现 | 纯 CPU |
 | `UniEvaluator` | ✅ 已实现 | 需要 GPU + 模型 `MingZhong/unieval-sum` |
 | `RewardEvaluator` | ✅ 已实现 | 需要 GPU + 模型 `OpenAssistant/reward-model-deberta-v3-large-v2` |
 | `LengthEvaluator` | ✅ 已实现 | 纯 CPU |
 | `scripts/coverage_metrics.py` | ✅ 已实现 | 长尾覆盖率、复杂关系覆盖率、平均跳数，纯 CPU |
-| `DAToGMetrics` | ✅ 已实现 | 分类树覆盖率、认知维度分布 |
+| `TGMetrics` | ✅ 已实现 | 分类树覆盖率、认知维度分布 |
 | 三个 Baseline（直接生成/模板填充/检索增强） | ❌ 未实现 | 论文注明"需单独实现" |
 | `EXPERIMENT_SCRIPTS.md` | ❌ 不存在 | 论文引用但从未创建 |
 | 论文中的 300 篇文档数据集 | ❌ 不存在 | 需自行准备 |
@@ -306,7 +306,7 @@ Condor 未开源代码，对比方式：
 
 | 变量 | 是否需要统一 | 说明 |
 |------|-------------|------|
-| 输入文档 | ✅ GraphGen 和 DA-ToG 之间 | Condor 不依赖外部文档，无需统一 |
+| 输入文档 | ✅ TextGraphTree 和 TGT 之间 | Condor 不依赖外部文档，无需统一 |
 | 合成器 LLM | ✅ 所有自己跑的方法 | Condor 用的是他们自己的模型 |
 | 生成数据量 | ✅ 所有方法 | 对齐到同一量级 |
 | 被微调的 Base 模型 | ✅ 所有方法 | 必须完全一致 |
@@ -325,11 +325,11 @@ experiments/
 │   │   ├── group_a_hierarchical/   ← 组 A：强层级文档
 │   │   ├── group_b_flat/           ← 组 B：弱层级文档
 │   │   └── group_c_mixed/          ← 组 C：混合型文档
-│   ├── graphgen_output/            ← GraphGen 生成的 QA 数据
+│   ├── textgraphtree_output/            ← TextGraphTree 生成的 QA 数据
 │   │   ├── group_a/
 │   │   ├── group_b/
 │   │   └── group_c/
-│   ├── datog_output/               ← DA-ToG 生成的 QA 数据
+│   ├── tgt_output/               ← TGT 生成的 QA 数据
 │   │   ├── group_a/
 │   │   ├── group_b/
 │   │   └── group_c/
@@ -347,14 +347,14 @@ experiments/
 ```
 Week 1 (最高优先级 — 可行性验证):
   ├── [1] 准备组 A（强层级）文档（1 个领域，30-50 篇）
-  ├── [2] 用 GraphGen 在组 A 上生成 500-1000 条 QA
-  ├── [3] 用 DA-ToG 在组 A 上生成 500-1000 条 QA
+  ├── [2] 用 TextGraphTree 在组 A 上生成 500-1000 条 QA
+  ├── [3] 用 TGT 在组 A 上生成 500-1000 条 QA
   ├── [4] Phase 1 自动化指标对比（MTLD + 覆盖度 + 层级指标）
   └── [5] 得到第一张对比表 → 判断可行性信号
 
 Week 2 (可行性确认后 — 补齐数据集):
   ├── [6] 准备组 B（弱层级）和组 C（混合型）文档
-  ├── [7] 三组数据集分别跑 GraphGen 和 DA-ToG
+  ├── [7] 三组数据集分别跑 TextGraphTree 和 TGT
   ├── [8] 下载 Condor-SFT-20K
   ├── [9] Phase 1 人工/LLM-Judge 评测（每组各抽 50 条）
   └── [10] 完整的三方 × 三组对比表

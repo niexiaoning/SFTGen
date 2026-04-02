@@ -1,6 +1,6 @@
 """
 任务处理器
-负责执行具体的KGE-Gen任务
+负责执行具体的TextGraphTree任务
 """
 
 import os
@@ -13,13 +13,12 @@ from datetime import datetime
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from graphgen.graphgen import GraphGen
-from graphgen.models import OpenAIClient, Tokenizer
-from graphgen.models.llm.limitter import RPM, TPM
-from graphgen.models.llm.llm_env import load_merged_extra_body
-from graphgen.utils import set_logger, logger
-from webui.task_manager import task_manager, TaskStatus
-from webui.utils import setup_workspace
+from textgraphtree.engine import TextGraphTree
+from textgraphtree.models import OpenAIClient, Tokenizer
+from textgraphtree.models.llm.limitter import RPM, TPM
+from textgraphtree.models.llm.llm_env import load_merged_extra_body
+from textgraphtree.utils import set_logger, logger
+from backend.runtime import task_manager, TaskStatus, setup_workspace
 from backend.schemas import TaskConfig
 
 
@@ -64,7 +63,7 @@ class TaskProcessor:
             self._current_log_file = log_file
             os.environ.update({k: str(v) for k, v in env.items()})
             
-            # 初始化 KGE-Gen
+            # 初始化 TextGraphTree
             tokenizer_instance = Tokenizer(config.tokenizer)
             synthesizer_llm_client = OpenAIClient(
                 model_name=config.synthesizer_model,
@@ -91,7 +90,7 @@ class TaskProcessor:
                 ),
             )
             
-            graph_gen = GraphGen(
+            graph_gen = TextGraphTree(
                 working_dir=working_dir,
                 tokenizer_instance=tokenizer_instance,
                 synthesizer_llm_client=synthesizer_llm_client,
@@ -530,7 +529,7 @@ class TaskProcessor:
     def _build_env(self, config: TaskConfig) -> Dict[str, Any]:
         """构建环境变量字典"""
         return {
-            "TOKENIZER_MODEL": config.tokenizer,
+            "TOKENIZER_MODEL": config.tokenizer,  # pragma: allowlist secret
             "SYNTHESIZER_BASE_URL": config.synthesizer_url,
             "SYNTHESIZER_MODEL": config.synthesizer_model,
             "TRAINEE_BASE_URL": config.trainee_url,

@@ -13,7 +13,7 @@ Expected output: **All verification tests passed! ✅**
 ## What Was Implemented
 
 ### 1. **HierarchicalPartitioner** 📊
-- **File**: `graphgen/models/partitioner/hierarchical_partitioner.py`
+- **File**: `textgraphtree/models/partitioner/hierarchical_partitioner.py`
 - **Purpose**: Partitions knowledge graphs into hierarchical communities
 - **Strategies**:
   - Sibling grouping (horizontal): Parent + children
@@ -24,7 +24,7 @@ Expected output: **All verification tests passed! ✅**
   - Metadata tracking for debugging
 
 ### 2. **TreeStructureGenerator** 🌳
-- **File**: `graphgen/models/generator/tree_generator.py`
+- **File**: `textgraphtree/models/generator/tree_generator.py`
 - **Purpose**: Generates QA pairs from hierarchical subgraphs
 - **Formats**: Markdown, JSON, Outline
 - **Features**:
@@ -34,7 +34,7 @@ Expected output: **All verification tests passed! ✅**
   - Robust response parsing
 
 ### 3. **Templates** 📝
-- **File**: `graphgen/templates/generation/hierarchical_generation.py`
+- **File**: `textgraphtree/templates/generation/hierarchical_generation.py`
 - **Languages**: English, Chinese
 - **Patterns**: 4 different reasoning types
 - **Quality**: Strict format requirements for consistent output
@@ -69,7 +69,7 @@ config = TaskConfig(
 
 ### Programmatic Usage
 ```python
-from graphgen.models import HierarchicalPartitioner, TreeStructureGenerator
+from textgraphtree.models import HierarchicalPartitioner, TreeStructureGenerator
 
 # Partition
 partitioner = HierarchicalPartitioner(
@@ -110,7 +110,7 @@ conda run -n graphgen python test_hierarchical_integration.py
 ## File Structure
 
 ```
-graphgen/
+textgraphtree/
 ├── models/
 │   ├── partitioner/
 │   │   └── hierarchical_partitioner.py      ✅ NEW

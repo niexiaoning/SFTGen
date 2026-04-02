@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# KGE-Gen 项目启动脚本
+# TextGraphTree 项目启动脚本
 # 简化版本，用于快速启动服务
-# 说明：不再启动 Gradio（webui/app.py）；`webui/` 仍保留供 task_manager/utils 等被后端与 CLI 引用。请使用 Vue 前端（frontend/）。
+# 说明：项目已完全切换为 Vue 前端 + FastAPI 后端，后台任务运行时位于 backend/runtime。
 
 # 不使用 set -e，允许某些服务启动失败时继续
 set +e
@@ -29,7 +29,7 @@ print_error() {
 
 print_header() {
     echo -e "${BLUE}================================${NC}"
-    echo -e "${BLUE}  KGE-Gen 项目启动${NC}"
+    echo -e "${BLUE}  TextGraphTree 项目启动${NC}"
     echo -e "${BLUE}================================${NC}"
 }
 
@@ -237,7 +237,7 @@ stop_services() {
     fi
     
     # 清理 PID 文件
-    rm -f .backend.pid .webui.pid .frontend.pid
+    rm -f .backend.pid .frontend.pid
     
     print_message "所有服务已停止"
 }
@@ -286,7 +286,7 @@ start_all() {
 
 # 显示帮助信息
 show_help() {
-    echo "KGE-Gen 项目启动脚本"
+    echo "TextGraphTree 项目启动脚本"
     echo ""
     echo "用法: $0 [命令]"
     echo ""

@@ -1,0 +1,30 @@
+# TGT (Domain-Agnostic Tree-of-Graphs) Pipeline Configuration
+# ================================================================
+# This is a template config. Copy and customize for your domain.
+
+tgt:
+  # ── Macro-Intent Layer: Task Taxonomy Tree ──────────────────────
+  taxonomy:
+    path: null # Path to taxonomy tree JSON/YAML
+    auto_generate: false # If true, auto-generate from source_document
+    source_document: null # Document path for auto-generation
+    sampling_strategy: coverage # Options: uniform_branch, depth_weighted, coverage
+
+  # ── Micro-Fact Layer: Graph Adapter ─────────────────────────────
+  graph:
+    adapter: networkx # Options: networkx
+    max_hops: 2 # BFS expansion hops from seed nodes
+    max_nodes_per_subgraph: 20 # Maximum nodes per retrieved subgraph
+    serialization_format: natural_language # Options: natural_language, markdown, json
+    min_link_score: 0.1 # Minimum intent-graph linking score
+
+  # ── Logic-Critic Layer: QA Validation ───────────────────────────
+  critic:
+    type: rule # Options: llm, rule, none
+    min_score: 0.6 # Minimum score to pass validation
+
+  # ── Generation Settings ─────────────────────────────────────────
+  generation:
+    target_qa_pairs: 100 # Target number of QA pairs
+    batch_size: 10 # Number of intents per sampling batch
+    data_format: ChatML # Output format: Alpaca, ChatML, ShareGPT

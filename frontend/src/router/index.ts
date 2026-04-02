@@ -59,22 +59,22 @@ const routes: Array<RouteRecordRaw> = [
         meta: { title: '配置设置', requiresAuth: true, requiresAdmin: true }
       },
       {
-        path: '/config/datog',
-        name: 'DAToGConfig',
-        component: () => import('@/views/DAToGConfig.vue'),
-        meta: { title: 'DA-ToG配置', requiresAuth: true, requiresAdmin: true }
+        path: '/config/tgt',
+        name: 'TGTConfig',
+        component: () => import('@/views/TGTConfig.vue'),
+        meta: { title: 'TGT配置', requiresAuth: true, requiresAdmin: true }
       },
       {
-        path: '/datog/taxonomies',
-        name: 'DAToGTaxonomies',
-        component: () => import('@/views/DAToGTaxonomies.vue'),
+        path: '/tgt/taxonomies',
+        name: 'TGTTaxonomies',
+        component: () => import('@/views/TGTTaxonomies.vue'),
         meta: { title: '意图树管理', requiresAuth: true, requiresAdmin: true }
       },
       {
-        path: '/datog/pipeline',
-        name: 'DAToGPipeline',
-        component: () => import('@/views/DAToGPipeline.vue'),
-        meta: { title: 'DA-ToG管道', requiresAuth: true, requiresAdmin: true }
+        path: '/tgt/pipeline',
+        name: 'TGTPipeline',
+        component: () => import('@/views/TGTPipeline.vue'),
+        meta: { title: 'TGT管道', requiresAuth: true, requiresAdmin: true }
       },
       {
         path: '/task/:id',
@@ -113,7 +113,7 @@ router.beforeEach(async (to, from, next) => {
   try {
     const title = to.meta.title as string
     if (title) {
-      document.title = `${title} - KGE-Gen`
+      document.title = `${title} - TextGraphTree`
     }
 
     const authStore = useAuthStore()

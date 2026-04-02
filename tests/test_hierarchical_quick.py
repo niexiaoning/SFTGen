@@ -1,8 +1,8 @@
 """Test hierarchical partitioner."""
 
 import asyncio
-from graphgen.models import HierarchicalPartitioner
-from graphgen.bases.datatypes import Community
+from textgraphtree.models import HierarchicalPartitioner
+from textgraphtree.bases.datatypes import Community
 
 
 async def test_hierarchical_partitioner():

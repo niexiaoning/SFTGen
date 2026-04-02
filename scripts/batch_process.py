@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GraphGen 批量处理脚本
+TextGraphTree 批量处理脚本
 提供简单的 Python API 来批量处理数据生成任务
 """
 
@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from graphgen_cli import GraphGenCLI
+from textgraphtree_cli import TextGraphTreeCLI
 
 
 class BatchProcessor:
@@ -51,8 +51,8 @@ class BatchProcessor:
             output_dir: 输出目录
             log_dir: 日志目录
             **kwargs: 其他配置参数
-                - output_data_type: 输出数据类型，可选 "atomic", "multi_hop", "aggregated", "all"
-                  "all" 模式会同时使用所有四种生成模式（atomic, aggregated, multi_hop, cot），
+                - output_data_type: 输出数据类型，可选 "atomic", "multi_hop", "aggregated", "all"  # pragma: allowlist secret
+                  "all" 模式会同时使用所有四种生成模式（atomic, aggregated, multi_hop, cot），  # pragma: allowlist secret
                   生成更多数据但消耗更多 token
         """
         self.api_key = api_key
@@ -73,24 +73,24 @@ class BatchProcessor:
         self.config = {
             "chunk_size": kwargs.get("chunk_size", 1024),
             "chunk_overlap": kwargs.get("chunk_overlap", 100),
-            "tokenizer": kwargs.get("tokenizer", "cl100k_base"),
-            "output_data_type": kwargs.get("output_data_type", "aggregated"),  # 可选: atomic, multi_hop, aggregated, all
+            "tokenizer": kwargs.get("tokenizer", "cl100k_base"),  # pragma: allowlist secret
+            "output_data_type": kwargs.get("output_data_type", "aggregated"),  # 可选: atomic, multi_hop, aggregated, all  # pragma: allowlist secret
             "output_data_format": kwargs.get("output_data_format", "Alpaca"),
             "quiz_samples": kwargs.get("quiz_samples", 2),
             "bidirectional": kwargs.get("bidirectional", True),
-            "expand_method": kwargs.get("expand_method", "max_tokens"),
+            "expand_method": kwargs.get("expand_method", "max_tokens"),  # pragma: allowlist secret
             "max_extra_edges": kwargs.get("max_extra_edges", 5),
-            "max_tokens": kwargs.get("max_tokens", 256),
+            "max_tokens": kwargs.get("max_tokens", 256),  # pragma: allowlist secret
             "max_depth": kwargs.get("max_depth", 2),
-            "edge_sampling": kwargs.get("edge_sampling", "max_loss"),
+            "edge_sampling": kwargs.get("edge_sampling", "max_loss"),  # pragma: allowlist secret
             "isolated_node_strategy": kwargs.get("isolated_node_strategy", "ignore"),
-            "loss_strategy": kwargs.get("loss_strategy", "only_edge"),
+            "loss_strategy": kwargs.get("loss_strategy", "only_edge"),  # pragma: allowlist secret
             "rpm": kwargs.get("rpm", 1000),
             "tpm": kwargs.get("tpm", 50000),
         }
         
         # 初始化 CLI
-        self.cli = GraphGenCLI()
+        self.cli = TextGraphTreeCLI()
         
         # 统计信息
         self.stats = {
@@ -150,7 +150,7 @@ class BatchProcessor:
         # 确定输出文件路径
         if output_file is None:
             base_name = file_path.stem
-            output_file = self.output_dir / f"{base_name}_graphgen_output.jsonl"
+            output_file = self.output_dir / f"{base_name}_textgraphtree_output.jsonl"
         else:
             output_file = Path(output_file)
         
@@ -422,7 +422,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(
-        description="GraphGen 批量处理脚本",
+        description="TextGraphTree 批量处理脚本",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例用法:
@@ -527,7 +527,7 @@ def main():
             output_dir=args.output_dir,
             chunk_size=args.chunk_size,
             chunk_overlap=args.chunk_overlap,
-            max_tokens=args.max_tokens,
+            max_tokens=args.max_tokens,  # pragma: allowlist secret
             max_depth=args.max_depth,
         )
         
