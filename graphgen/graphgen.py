@@ -32,7 +32,7 @@ sys_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
 
 @dataclass
-class GraphGen:
+class SGTGen:
     unique_id: int = int(time.time())
     working_dir: str = os.path.join(sys_path, "cache")
 
@@ -448,3 +448,7 @@ class GraphGen:
         await self.extraction_cache_storage.drop()
 
         logger.info("All caches are cleared")
+
+
+# Backward compatibility: keep legacy symbol while exposing new project name.
+GraphGen = SGTGen

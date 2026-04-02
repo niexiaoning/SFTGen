@@ -8,11 +8,10 @@ from importlib.resources import files
 import yaml
 from dotenv import load_dotenv
 
-from graphgen.graphgen import GraphGen
+from graphgen.graphgen import SGTGen
 from graphgen.utils import logger, set_logger
 
-# DA-ToG imports
-from graphgen.models.taxonomy.taxonomy_tree import TaxonomyTree
+# SGT-Gen imports
 from graphgen.utils.datog_metrics import DAToGMetrics
 import json
 
@@ -59,11 +58,11 @@ def main():
         help="Skip knowledge graph building (use existing KG)",
         action="store_true",
     )
-    # DA-ToG 指标参数
-    datog_group = parser.add_argument_group("DA-ToG 指标计算")
-    datog_group.add_argument("--datog-taxonomy", help="DA-ToG 意图树文件路径", required=False)
-    datog_group.add_argument("--datog-results", help="DA-ToG 结果文件路径", required=False)
-    datog_group.add_argument("--datog-output", help="DA-ToG 指标输出文件路径", required=False)
+    # SGT-Gen 指标参数
+    datog_group = parser.add_argument_group("SGT-Gen 指标计算")
+    datog_group.add_argument("--datog-taxonomy", help="SGT-Gen 意图树文件路径", required=False)
+    datog_group.add_argument("--datog-results", help="SGT-Gen 结果文件路径", required=False)
+    datog_group.add_argument("--datog-output", help="SGT-Gen 指标输出文件路径", required=False)
 
     args = parser.parse_args()
 
@@ -89,8 +88,8 @@ def main():
         os.path.join(output_path, f"{unique_id}_eval.log"),
     )
 
-    # Initialize GraphGen
-    graph_gen = GraphGen(unique_id=unique_id, working_dir=working_dir)
+    # Initialize SGT-Gen
+    graph_gen = SGTGen(unique_id=unique_id, working_dir=working_dir)
 
     # Step 1: Build knowledge graph (unless skipped)
     if not args.skip_kg_build:
@@ -113,11 +112,6 @@ def main():
         partition_config=config["partition"],
         evaluation_config=config["evaluation"],
     )
-
-    # DA-ToG 指标计算模式
-    if hasattr(args, 'datog_taxonomy'):
-        success = run_datog_metrics(args)
-        sys.exit(0 if success else 1)
 
     # Save configuration
     save_config(os.path.join(output_path, "config.yaml"), config)

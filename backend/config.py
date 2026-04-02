@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     
     # API 配置
     API_V1_PREFIX: str = "/api"
-    PROJECT_NAME: str = "KGE-Gen API"
+    PROJECT_NAME: str = "SGT-Gen API"
     VERSION: str = "2.0.0"
     
     # 大模型配置

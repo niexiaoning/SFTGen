@@ -1,6 +1,6 @@
 """
 FastAPI Application
-KGE-Gen 后端 API 服务
+SGT-Gen 后端 API 服务
 """
 
 import os
@@ -16,9 +16,9 @@ load_dotenv()
 
 # 创建 FastAPI 应用
 app = FastAPI(
-    title="KGE-Gen API",
+    title="SGT-Gen API",
     version="2.0.0",
-    description="KGE-Gen SFT 数据生成平台 API",
+    description="SGT-Gen SFT 数据生成平台 API",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -40,7 +40,7 @@ app.include_router(router, prefix="/api")
 async def root():
     """根路径"""
     return {
-        "name": "KGE-Gen API",
+        "name": "SGT-Gen API",
         "version": "2.0.0",
         "status": "running"
     }

@@ -73,7 +73,7 @@
           <el-input v-model="formData.taxonomy_path" placeholder="请输入意图树文件路径" />
         </el-form-item>
 
-        <el-divider>DA-ToG 配置</el-divider>
+        <el-divider>SGT-Gen 配置</el-divider>
 
         <el-form-item label="采样策略">
           <el-select v-model="formData.sampling_strategy">

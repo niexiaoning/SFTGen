@@ -52,6 +52,7 @@ class BatchRequestManager:
         
         self.request_queue: List[BatchRequest] = []
         self.queue_lock = asyncio.Lock()
+        self.process_lock = asyncio.Lock()
         self.batch_task: Optional[asyncio.Task] = None
         self.pending_futures: Dict[int, asyncio.Future] = {}
         self.request_counter = 0
@@ -86,7 +87,8 @@ class BatchRequestManager:
         future = asyncio.Future()
         request_index = self.request_counter
         self.request_counter += 1
-        
+
+        should_process_immediately = False
         async with self.queue_lock:
             request = BatchRequest(
                 prompt=prompt,
@@ -97,14 +99,19 @@ class BatchRequestManager:
             )
             self.request_queue.append(request)
             self.pending_futures[request_index] = future
-            
-            # 如果队列达到batch_size，立即触发处理
+
+            # 如果队列达到 batch_size，立即处理；避免批次残留导致等待卡住
             if len(self.request_queue) >= self.batch_size:
-                await self._process_batch()
+                should_process_immediately = True
+                if self.batch_task and not self.batch_task.done():
+                    self.batch_task.cancel()
             elif self.batch_task is None or self.batch_task.done():
                 # 启动定时任务
                 self.batch_task = asyncio.create_task(self._batch_timer())
-        
+
+        if should_process_immediately:
+            await self._drain_batches(force=False)
+
         # 等待结果
         return await future
     
@@ -118,31 +125,54 @@ class BatchRequestManager:
     async def _batch_timer(self):
         """定时器，在max_wait_time后处理队列"""
         await asyncio.sleep(self.max_wait_time)
-        async with self.queue_lock:
-            if self.request_queue:
-                await self._process_batch()
-    
-    async def _process_batch(self):
+        await self._drain_batches(force=True)
+
+    async def _drain_batches(self, force: bool):
+        """
+        持续处理可执行批次。
+
+        :param force: True 时允许处理不足 batch_size 的残留请求
+        """
+        async with self.process_lock:
+            while await self._process_one_batch(force=force):
+                pass
+
+    async def _process_one_batch(self, force: bool = False) -> bool:
         """处理当前队列中的所有请求"""
-        if not self.request_queue:
-            return
-        
-        # 取出当前批次
-        batch = self.request_queue[:self.batch_size]
-        self.request_queue = self.request_queue[self.batch_size:]
-        
+        batch: List[BatchRequest] = []
+        need_timer = False
+        async with self.queue_lock:
+            if not self.request_queue:
+                return False
+            if not force and len(self.request_queue) < self.batch_size:
+                return False
+
+            take = self.batch_size if not force else min(self.batch_size, len(self.request_queue))
+            batch = self.request_queue[:take]
+            self.request_queue = self.request_queue[take:]
+            if (
+                self.request_queue
+                and len(self.request_queue) < self.batch_size
+                and (self.batch_task is None or self.batch_task.done())
+            ):
+                need_timer = True
+
+        if need_timer:
+            self.batch_task = asyncio.create_task(self._batch_timer())
+
         # 记录批量处理
         logger.debug("Processing batch of %d requests", len(batch))
-        
+
         # 并发处理批次中的请求
         tasks = []
         for request in batch:
             task = self._process_single_request(request)
             tasks.append(task)
-        
+
         # 等待所有请求完成
         await asyncio.gather(*tasks, return_exceptions=True)
         logger.debug("Completed batch of %d requests", len(batch))
+        return True
     
     async def _process_single_request(self, request: BatchRequest):
         """处理单个请求"""
@@ -186,10 +216,8 @@ class BatchRequestManager:
     
     async def flush(self):
         """刷新队列，处理所有剩余的请求"""
-        async with self.queue_lock:
-            while self.request_queue:
-                await self._process_batch()
-        
+        await self._drain_batches(force=True)
+
         # 等待所有future完成
         if self.pending_futures:
             await asyncio.gather(*self.pending_futures.values(), return_exceptions=True)

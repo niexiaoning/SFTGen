@@ -9,8 +9,8 @@ import type {
 import api from '@/api'
 import { ElMessage } from 'element-plus'
 
-export const useDAToGStore = defineStore('datog', () => {
-  // 默认 DA-ToG 配置
+export const useDAToGStore = defineStore('sgtgen', () => {
+  // 默认 SGT-Gen 配置
   const config = ref<DAToGConfig>({
     taxonomy_path: '',
     domain: '',
@@ -36,7 +36,7 @@ export const useDAToGStore = defineStore('datog', () => {
   // 管道运行中标志
   const pipelineRunning = ref(false)
 
-  // 加载 DA-ToG 配置
+  // 加载 SGT-Gen 配置
   const loadConfig = async () => {
     try {
       const response = await api.datog.loadConfig()
@@ -44,23 +44,23 @@ export const useDAToGStore = defineStore('datog', () => {
         config.value = { ...config.value, ...response.data }
       }
     } catch (error) {
-      console.log('使用默认 DA-ToG 配置')
+      console.log('使用默认 SGT-Gen 配置')
     }
   }
 
-  // 保存 DA-ToG 配置
+  // 保存 SGT-Gen 配置
   const saveConfig = async () => {
     try {
       const response = await api.datog.saveConfig(config.value)
       if (response.success) {
-        ElMessage.success('DA-ToG 配置保存成功')
+        ElMessage.success('SGT-Gen 配置保存成功')
         return true
       } else {
-        ElMessage.error(response.message || 'DA-ToG 配置保存失败')
+        ElMessage.error(response.message || 'SGT-Gen 配置保存失败')
         return false
       }
     } catch (error: any) {
-      ElMessage.error(error.message || 'DA-ToG 配置保存失败')
+      ElMessage.error(error.message || 'SGT-Gen 配置保存失败')
       return false
     }
   }
@@ -157,21 +157,21 @@ export const useDAToGStore = defineStore('datog', () => {
     }
   }
 
-  // 运行 DA-ToG 管道
+  // 运行 SGT-Gen 管道
   const runPipeline = async (pipelineConfig: DAToGPipelineConfig) => {
     try {
       pipelineRunning.value = true
       const response = await api.datog.runPipeline(pipelineConfig)
       if (response.success && response.data) {
         pipelineStatus.value = response.data
-        ElMessage.success('DA-ToG 管道已启动')
+        ElMessage.success('SGT-Gen 管道已启动')
         return response.data
       } else {
-        ElMessage.error(response.message || 'DA-ToG 管道启动失败')
+        ElMessage.error(response.message || 'SGT-Gen 管道启动失败')
         return null
       }
     } catch (error: any) {
-      ElMessage.error(error.message || 'DA-ToG 管道启动失败')
+      ElMessage.error(error.message || 'SGT-Gen 管道启动失败')
       return null
     } finally {
       pipelineRunning.value = false

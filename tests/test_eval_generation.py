@@ -5,7 +5,7 @@ Simple test script for evaluation dataset generation
 import os
 import sys
 import yaml
-from graphgen.graphgen import GraphGen
+from graphgen.graphgen import SGTGen
 from graphgen.utils import logger, set_logger
 
 # Add parent directory to path
@@ -33,9 +33,9 @@ def test_evaluation_generation():
     os.makedirs(working_dir, exist_ok=True)
     
     try:
-        # Initialize GraphGen
-        logger.info("Initializing GraphGen")
-        graph_gen = GraphGen(unique_id=99999, working_dir=working_dir)
+        # Initialize SGT-Gen
+        logger.info("Initializing SGT-Gen")
+        graph_gen = SGTGen(unique_id=99999, working_dir=working_dir)
         
         # Note: This test assumes you have already built a knowledge graph
         # If not, you would need to call:

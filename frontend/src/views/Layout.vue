@@ -2,7 +2,7 @@
   <el-container class="layout-container">
     <el-header class="layout-header" :class="{ 'header-hidden': isHeaderHidden }">
       <div class="logo">
-        <h1>KGE-Gen SFT数据生成平台</h1>
+        <h1>SGT-Gen SFT数据生成平台</h1>
       </div>
       <div class="header-right">
         <el-menu
@@ -30,15 +30,15 @@
             </template>
             <el-menu-item index="/config/sft">SFT配置</el-menu-item>
             <el-menu-item index="/config/evaluation">评测配置</el-menu-item>
-            <el-menu-item index="/config/datog">DA-ToG配置</el-menu-item>
+            <el-menu-item index="/config/datog">SGT-Gen配置</el-menu-item>
           </el-sub-menu>
           <el-sub-menu v-if="authStore.isAdmin" index="/datog">
             <template #title>
               <el-icon><Grid /></el-icon>
-              <span>DA-ToG</span>
+              <span>SGT-Gen</span>
             </template>
             <el-menu-item index="/datog/taxonomies">意图树管理</el-menu-item>
-            <el-menu-item index="/datog/pipeline">DA-ToG管道</el-menu-item>
+            <el-menu-item index="/datog/pipeline">SGT-Gen管道</el-menu-item>
           </el-sub-menu>
           <el-menu-item v-if="authStore.isAdmin" index="/users">
             <el-icon><User /></el-icon>
@@ -86,9 +86,9 @@
 
     <!-- <el-footer class="layout-footer">
       <div class="footer-content">
-        <span>KGE-Gen v2.0.0 © 2025</span>
+        <span>SGT-Gen v2.0.0 © 2025</span>
         <div class="footer-links">
-          <a href="https://github.com/open-sciencelab/GraphGen" target="_blank">GitHub</a>
+          <a href="https://github.com/open-sciencelab/SGT-Gen" target="_blank">GitHub</a>
           <a href="https://arxiv.org/abs/2505.20416" target="_blank">arXiv</a>
         </div>
       </div>

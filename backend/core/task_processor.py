@@ -1,6 +1,6 @@
 """
 任务处理器
-负责执行具体的KGE-Gen任务
+负责执行具体的 SGT-Gen 任务
 """
 
 import os
@@ -13,7 +13,7 @@ from datetime import datetime
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from graphgen.graphgen import GraphGen
+from graphgen.graphgen import SGTGen
 from graphgen.models import OpenAIClient, Tokenizer
 from graphgen.models.llm.limitter import RPM, TPM
 from graphgen.models.llm.llm_env import load_merged_extra_body
@@ -64,7 +64,7 @@ class TaskProcessor:
             self._current_log_file = log_file
             os.environ.update({k: str(v) for k, v in env.items()})
             
-            # 初始化 KGE-Gen
+            # 初始化 SGT-Gen
             tokenizer_instance = Tokenizer(config.tokenizer)
             synthesizer_llm_client = OpenAIClient(
                 model_name=config.synthesizer_model,
@@ -91,7 +91,7 @@ class TaskProcessor:
                 ),
             )
             
-            graph_gen = GraphGen(
+            graph_gen = SGTGen(
                 working_dir=working_dir,
                 tokenizer_instance=tokenizer_instance,
                 synthesizer_llm_client=synthesizer_llm_client,

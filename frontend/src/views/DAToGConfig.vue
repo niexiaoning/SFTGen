@@ -3,7 +3,7 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>DA-ToG 配置</span>
+          <span>SGT-Gen 配置</span>
           <div class="header-actions">
             <el-button @click="handleReset">重置为默认</el-button>
             <el-button type="primary" @click="handleSave" :loading="saving">保存配置</el-button>
@@ -16,14 +16,14 @@
           <!-- 意图树配置 -->
           <el-collapse-item title="意图树配置" name="taxonomy">
             <el-alert
-              title="DA-ToG (Domain-Agnostic Tree-of-Graphs)"
+              title="SGT-Gen (Domain-Agnostic Tree-of-Graphs)"
               type="info"
               :closable="false"
               style="margin-bottom: 20px"
             >
               <template #default>
                 <div style="font-size: 12px; line-height: 1.6">
-                  <p>DA-ToG 是一个领域无关的树状图生成框架，通过三层次结构实现高质量SFT数据生成：</p>
+                  <p>SGT-Gen 是一个领域无关的树状图生成框架，通过三层次结构实现高质量SFT数据生成：</p>
                   <ul style="margin: 8px 0; padding-left: 20px">
                     <li><strong>Macro-Intent Layer</strong>：意图树 (TaxonomyTree)，定义认知维度和目标意图</li>
                     <li><strong>Micro-Fact Layer</strong>：知识图谱适配器，从KG中提取事实知识</li>

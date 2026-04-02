@@ -3,19 +3,19 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>DA-ToG 管道</span>
+          <span>SGT-Gen 管道</span>
         </div>
       </template>
 
       <el-alert
-        title="DA-ToG 管道说明"
+        title="SGT-Gen 管道说明"
         type="info"
         :closable="false"
         style="margin-bottom: 24px"
       >
         <template #default>
           <div style="font-size: 13px; line-height: 1.8">
-            <p>DA-ToG 管道通过以下步骤生成领域特定的SFT数据：</p>
+            <p>SGT-Gen 管道通过以下步骤生成领域特定的SFT数据：</p>
             <ol style="margin: 8px 0; padding-left: 24px">
               <li><strong>意图采样</strong>：从意图树中根据采样策略选择目标意图</li>
               <li><strong>知识检索</strong>：从知识图谱中检索相关事实子图</li>
@@ -302,7 +302,7 @@ const handleRun = async () => {
 
   try {
     await ElMessageBox.confirm(
-      '确定要启动 DA-ToG 管道吗？这可能需要较长时间。',
+      '确定要启动 SGT-Gen 管道吗？这可能需要较长时间。',
       '确认启动',
       {
         confirmButtonText: '启动',

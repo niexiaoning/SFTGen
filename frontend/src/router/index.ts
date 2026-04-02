@@ -62,7 +62,7 @@ const routes: Array<RouteRecordRaw> = [
         path: '/config/datog',
         name: 'DAToGConfig',
         component: () => import('@/views/DAToGConfig.vue'),
-        meta: { title: 'DA-ToG配置', requiresAuth: true, requiresAdmin: true }
+        meta: { title: 'SGT-Gen配置', requiresAuth: true, requiresAdmin: true }
       },
       {
         path: '/datog/taxonomies',
@@ -74,7 +74,7 @@ const routes: Array<RouteRecordRaw> = [
         path: '/datog/pipeline',
         name: 'DAToGPipeline',
         component: () => import('@/views/DAToGPipeline.vue'),
-        meta: { title: 'DA-ToG管道', requiresAuth: true, requiresAdmin: true }
+        meta: { title: 'SGT-Gen管道', requiresAuth: true, requiresAdmin: true }
       },
       {
         path: '/task/:id',
@@ -113,7 +113,7 @@ router.beforeEach(async (to, from, next) => {
   try {
     const title = to.meta.title as string
     if (title) {
-      document.title = `${title} - KGE-Gen`
+      document.title = `${title} - SGT-Gen`
     }
 
     const authStore = useAuthStore()

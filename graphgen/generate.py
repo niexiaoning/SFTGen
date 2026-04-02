@@ -6,7 +6,7 @@ from importlib.resources import files
 import yaml
 from dotenv import load_dotenv
 
-from graphgen.graphgen import GraphGen
+from graphgen.graphgen import SGTGen
 from graphgen.utils import logger, set_logger
 
 sys_path = os.path.abspath(os.path.dirname(__file__))
@@ -31,13 +31,13 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--config_file",
-        help="Config parameters for GraphGen.",
+        help="Config parameters for SGT-Gen.",
         default=files("graphgen").joinpath("configs", "aggregated_config.yaml"),
         type=str,
     )
     parser.add_argument(
         "--output_dir",
-        help="Output directory for GraphGen.",
+        help="Output directory for SGT-Gen.",
         default=sys_path,
         required=True,
         type=str,
@@ -61,12 +61,12 @@ def main():
         if_stream=True,
     )
     logger.info(
-        "GraphGen with unique ID %s logging to %s",
+        "SGT-Gen with unique ID %s logging to %s",
         unique_id,
         os.path.join(working_dir, f"{unique_id}_{mode}.log"),
     )
 
-    graph_gen = GraphGen(unique_id=unique_id, working_dir=working_dir)
+    graph_gen = SGTGen(unique_id=unique_id, working_dir=working_dir)
 
     graph_gen.insert(read_config=config["read"], split_config=config["split"])
 
@@ -84,7 +84,7 @@ def main():
     )
 
     save_config(os.path.join(output_path, "config.yaml"), config)
-    logger.info("GraphGen completed successfully. Data saved to %s", output_path)
+    logger.info("SGT-Gen completed successfully. Data saved to %s", output_path)
 
 
 if __name__ == "__main__":

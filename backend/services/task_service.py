@@ -11,7 +11,6 @@ from typing import Dict, Any, Optional, List
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 from webui.task_manager import task_manager, TaskStatus
-from webui.base import WebuiParams
 from backend.core.task_processor import TaskProcessor
 from backend.schemas import TaskConfig
 

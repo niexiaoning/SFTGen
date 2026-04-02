@@ -1,5 +1,5 @@
 """
-KGE-Gen Backend API
+SGT-Gen Backend API
 FastAPI 服务入口
 """
 

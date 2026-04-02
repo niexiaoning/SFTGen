@@ -25,7 +25,6 @@ dependencies:
     - jieba
     - plotly
     - pandas
-    - gradio>=5.44.1
     - kaleido
     - pyyaml
     - langcodes

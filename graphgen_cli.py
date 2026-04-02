@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-KGE-Gen 命令行工具
-将 KGE-Gen Demo web app 转换为命令行脚本版本
+SGT-Gen 命令行工具
+将 SGT-Gen Demo web app 转换为命令行脚本版本
 """
 
 import argparse
@@ -19,25 +19,25 @@ import yaml
 from dotenv import load_dotenv
 from tqdm import tqdm
 
-from graphgen.graphgen import GraphGen
+from graphgen.graphgen import SGTGen
 from graphgen.models import OpenAIClient, Tokenizer
 from graphgen.models.llm.limitter import RPM, TPM
 from graphgen.models.llm.llm_env import load_merged_extra_body
 from graphgen.utils import set_logger
 from webui.utils import cleanup_workspace, setup_workspace
 
-# DA-ToG imports
+# SGT-Gen imports
 from graphgen.datog_pipeline import DAToGPipeline
 from graphgen.models.taxonomy.taxonomy_tree import TaxonomyTree
 from graphgen.models.storage.networkx_storage import NetworkXStorage
 from graphgen.utils.datog_metrics import DAToGMetrics
 
 
-class GraphGenCLI:
-    """KGE-Gen 命令行接口类"""
+class SGTGenCLI:
+    """SGT-Gen 命令行接口类"""
     
     def __init__(self):
-        self.root_dir = files("webui").parent
+        self.root_dir = str(files("graphgen").parent)
         sys.path.append(self.root_dir)
         load_dotenv()
         self.batch_logger = None
@@ -49,7 +49,8 @@ class GraphGenCLI:
             "total_time": 0,
             "file_stats": []
         }
-        
+
+
     def test_api_connection(self, api_base: str, api_key: str, model_name: str) -> bool:
         """测试 API 连接"""
         try:
@@ -69,8 +70,8 @@ class GraphGenCLI:
             print(f"❌ {model_name}: API 连接失败: {str(e)}")
             return False
     
-    def init_graph_gen(self, config: dict, env: dict) -> GraphGen:
-        """初始化 KGE-Gen 实例"""
+    def init_graph_gen(self, config: dict, env: dict) -> SGTGen:
+        """初始化 SGT-Gen 实例"""
         # 设置工作目录
         log_file, working_dir = setup_workspace(os.path.join(self.root_dir, "cache"))
         set_logger(log_file, if_stream=True)
@@ -104,8 +105,8 @@ class GraphGenCLI:
             ),
         )
 
-        # 创建 KGE-Gen 实例（传递 synthesizer_llm_client 和 trainee_llm_client）
-        graph_gen = GraphGen(
+        # 创建 SGT-Gen 实例（传递 synthesizer_llm_client 和 trainee_llm_client）
+        graph_gen = SGTGen(
             working_dir=working_dir,
             tokenizer_instance=tokenizer_instance,
             synthesizer_llm_client=synthesizer_llm_client,
@@ -178,7 +179,7 @@ class GraphGenCLI:
         
         # 记录开始信息
         self.batch_logger.info("=" * 80)
-        self.batch_logger.info("KGE-Gen 批量处理开始")
+        self.batch_logger.info("SGT-Gen 批量处理开始")
         self.batch_logger.info(f"开始时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         self.batch_logger.info("=" * 80)
     
@@ -359,7 +360,7 @@ class GraphGenCLI:
                 "TPM": args.tpm,
             }
 
-            # 初始化 KGE-Gen
+            # 初始化 SGT-Gen
             graph_gen = self.init_graph_gen(config, env)
             graph_gen.clear()
 
@@ -447,7 +448,7 @@ class GraphGenCLI:
             
             # 确定输出文件名
             base_name = os.path.splitext(os.path.basename(file_path))[0]
-            output_file = f"{base_name}_graphgen_output.jsonl"
+            output_file = f"{base_name}_sgtgen_output.jsonl"
             
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(output_data, f, ensure_ascii=False, indent=2)
@@ -488,7 +489,7 @@ class GraphGenCLI:
         batch_start_time = time.time()
         
         # 设置批量处理日志
-        log_file = f"graphgen_batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        log_file = f"sgtgen_batch_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
         self.setup_batch_logging(log_file)
         
         # 记录配置
@@ -562,9 +563,9 @@ class GraphGenCLI:
         
         return self.batch_stats["failed_files"] == 0
     
-    def run_graphgen(self, args):
-        """运行 KGE-Gen 主流程"""
-        print("🚀 开始运行 KGE-Gen...")
+    def run_sgtgen(self, args):
+        """运行 SGT-Gen 主流程"""
+        print("🚀 开始运行 SGT-Gen...")
         
         # 构建配置
         config = {
@@ -639,8 +640,8 @@ class GraphGenCLI:
         print(f"📝 源文本 token 数量: {token_count}")
         print(f"📈 预计 token 使用量: {estimated_usage}")
 
-        # 初始化 KGE-Gen
-        print("🔧 初始化 KGE-Gen...")
+        # 初始化 SGT-Gen
+        print("🔧 初始化 SGT-Gen...")
        
         graph_gen.clear()
 
@@ -737,7 +738,7 @@ class GraphGenCLI:
                 output_file = args.output_file
             else:
                 base_name = os.path.splitext(os.path.basename(args.input_file))[0]
-                output_file = f"{base_name}_graphgen_output.jsonl"
+                output_file = f"{base_name}_sgtgen_output.jsonl"
             
             with open(output_file, "w", encoding="utf-8") as f:
                 json.dump(output_data, f, ensure_ascii=False, indent=2)
@@ -747,7 +748,7 @@ class GraphGenCLI:
             trainee_tokens = sum(u["total_tokens"] for u in graph_gen.trainee_llm_client.token_usage) if config["if_trainee_model"] else 0
             total_tokens = synthesizer_tokens + trainee_tokens
 
-            print("✅ KGE-Gen 运行完成!")
+            print("✅ SGT-Gen 运行完成!")
             print(f"📁 输出文件: {output_file}")
             print(f"🔢 实际使用 token: {total_tokens}")
             print(f"📊 Synthesizer tokens: {synthesizer_tokens}")
@@ -765,8 +766,8 @@ class GraphGenCLI:
             cleanup_workspace(graph_gen.working_dir)
 
     def run_datog(self, args):
-        """运行 DA-ToG 管道"""
-        print("🚀 开始运行 DA-ToG 管道...")
+        """运行 SGT-Gen 管道"""
+        print("🚀 开始运行 SGT-Gen 管道...")
 
         # Load config
         with open(args.datog_config, "r", encoding="utf-8") as f:
@@ -806,7 +807,7 @@ class GraphGenCLI:
         graph_storage = None
         if args.input_file:
             print(f"📖 从输入文件构建知识图谱: {args.input_file}")
-            graph_gen = GraphGen(working_dir=working_dir, tokenizer_instance=tokenizer_instance, synthesizer_llm_client=llm_client)
+            graph_gen = SGTGen(working_dir=working_dir, tokenizer_instance=tokenizer_instance, synthesizer_llm_client=llm_client)
             graph_gen.clear()
             read_config = {"input_file": args.input_file}
             split_config = {
@@ -839,7 +840,7 @@ class GraphGenCLI:
         print(f"✅ 意图树加载完成: {tree.name} ({tree.size} 节点)")
 
         # Create and run pipeline
-        print("🔧 初始化 DA-ToG 管道...")
+        print("🔧 初始化 SGT-Gen 管道...")
         pipeline = DAToGPipeline.from_config(args.datog_config, llm_client, graph_storage)
 
         # Run pipeline
@@ -871,13 +872,13 @@ class GraphGenCLI:
             with open(metrics_file, "w", encoding="utf-8") as f:
                 json.dump(report, f, ensure_ascii=False, indent=2)
 
-            print("✅ DA-ToG 管道运行完成!")
+            print("✅ SGT-Gen 管道运行完成!")
             print(f"📊 意图覆盖率: {report['coverage']['overall_ratio']:.1%}")
             print(f"📊 生成 QA 对数: {len(results)}")
             return True
 
         except Exception as e:
-            print(f"❌ DA-ToG 管道运行出错: {str(e)}")
+            print(f"❌ SGT-Gen 管道运行出错: {str(e)}")
             import traceback
             traceback.print_exc()
             return False
@@ -889,24 +890,24 @@ class GraphGenCLI:
 def create_parser():
     """创建命令行参数解析器"""
     parser = argparse.ArgumentParser(
-        description="KGE-Gen 命令行工具 - 从文本生成知识图谱训练数据",
+        description="SGT-Gen 命令行工具 - 从文本生成知识图谱训练数据",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例用法:
   # 单个文件处理
-  python graphgen_cli.py -i input.txt -k your_api_key
+  python sgtgen_cli.py -i input.txt -k your_api_key
 
   # 批量处理多个文件
-  python graphgen_cli.py -b file1.txt file2.json file3.csv -k your_api_key
+  python sgtgen_cli.py -b file1.txt file2.json file3.csv -k your_api_key
 
   # 从文件列表批量处理
-  python graphgen_cli.py -l file_list.txt -k your_api_key
+  python sgtgen_cli.py -l file_list.txt -k your_api_key
 
   # 使用 Trainee 模型
-  python graphgen_cli.py -i input.txt -k your_api_key --use-trainee-model --trainee-api-key your_trainee_key
+  python sgtgen_cli.py -i input.txt -k your_api_key --use-trainee-model --trainee-api-key your_trainee_key
 
   # 自定义参数
-  python graphgen_cli.py -i input.txt -k your_api_key --chunk-size 2048 --max-depth 3
+  python sgtgen_cli.py -i input.txt -k your_api_key --chunk-size 2048 --max-depth 3
         """
     )
 
@@ -1004,12 +1005,12 @@ def create_parser():
                            default=int(os.getenv("TPM", "50000")), 
                            help="每分钟 token 数 (默认从环境变量 TPM 读取)")
 
-    # DA-ToG 模式参数组
-    datog_group = parser.add_argument_group("DA-ToG 模式")
-    datog_group.add_argument("--datog-config", help="DA-ToG 配置文件路径")
+    # SGT-Gen 模式参数组
+    datog_group = parser.add_argument_group("SGT-Gen 模式")
+    datog_group.add_argument("--datog-config", help="SGT-Gen 配置文件路径")
     datog_group.add_argument("--datog-input", help="构建知识图谱的输入文件 (与 --datog-config 配合使用)")
     datog_group.add_argument("--datog-kg", help="现有知识图谱路径")
-    datog_group.add_argument("--datog-output", help="DA-ToG 输出文件路径")
+    datog_group.add_argument("--datog-output", help="SGT-Gen 输出文件路径")
 
     # 测试连接
     parser.add_argument("--test-connection", action="store_true", help="仅测试 API 连接")
@@ -1074,9 +1075,9 @@ def main():
     if args.use_trainee_model and not args.trainee_api_key:
         args.trainee_api_key = args.api_key
 
-    # DA-ToG 模式检查
+    # SGT-Gen 模式检查
     if hasattr(args, 'datog_config') and args.datog_config:
-        cli = GraphGenCLI()
+        cli = SGTGenCLI()
         # 设置 datog 参数
         args.datog_input = getattr(args, 'datog_input', None) or args.input_file
         args.datog_kg = getattr(args, 'datog_kg', None)
@@ -1084,7 +1085,7 @@ def main():
         success = cli.run_datog(args)
         sys.exit(0 if success else 1)
 
-    cli = GraphGenCLI()
+    cli = SGTGenCLI()
 
     # 如果只是测试连接
     if args.test_connection:
@@ -1104,7 +1105,7 @@ def main():
     if len(input_files) == 1:
         # 单个文件处理
         args.input_file = input_files[0]
-        success = cli.run_graphgen(args)
+        success = cli.run_sgtgen(args)
     else:
         # 批量处理
         args.input_files = input_files
@@ -1120,3 +1121,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# Backward compatibility for existing scripts importing GraphGenCLI
+GraphGenCLI = SGTGenCLI

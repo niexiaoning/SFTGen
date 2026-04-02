@@ -24,7 +24,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from graphgen.datog_pipeline import DAToGPipeline
-from graphgen.graphgen import GraphGen
+from graphgen.graphgen import SGTGen
 from graphgen.models.taxonomy.taxonomy_tree import TaxonomyTree
 from graphgen.models.taxonomy.auto_taxonomy import AutoTaxonomy
 from graphgen.models.storage.networkx_storage import NetworkXStorage
@@ -163,7 +163,7 @@ async def run_domain(
 
     # Step 3: Run DA-ToG pipeline
     try:
-        logger.info("Initializing DA-ToG pipeline...")
+        logger.info("Initializing SGT-Gen pipeline...")
         pipeline = DAToGPipeline.from_config(str(config_path), llm_client, graph_storage)
 
         target_count = datog_config.get("generation", {}).get("target_qa_pairs", 100)
@@ -196,7 +196,7 @@ async def run_domain(
         return str(results_file), str(metrics_file)
 
     except Exception as e:
-        logger.error(f"Error running DA-ToG pipeline: {e}")
+        logger.error(f"Error running SGT-Gen pipeline: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -204,7 +204,7 @@ async def run_domain(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run DA-ToG pipeline for a specific domain"
+        description="Run SGT-Gen pipeline for a specific domain"
     )
     parser.add_argument(
         "--domain", "-d", required=True,
@@ -247,11 +247,11 @@ def main():
     ))
 
     if results:
-        print("✅ DA-ToG pipeline completed successfully!")
+        print("✅ SGT-Gen pipeline completed successfully!")
         print(f"📊 Results: {results[0]}")
         print(f"📊 Metrics: {results[1]}")
     else:
-        print("❌ DA-ToG pipeline failed")
+        print("❌ SGT-Gen pipeline failed")
         sys.exit(1)
 
 
