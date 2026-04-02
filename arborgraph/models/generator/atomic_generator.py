@@ -401,6 +401,15 @@ class AtomicQuestionGenerator(AtomicGenerator):
         batch: tuple[list[tuple[str, dict]], list[tuple[Any, Any, dict]]]
     ) -> str:
         context, language = self._build_context(batch)
+
+        # Question-only stage still uses hierarchical templates; serialize it here too.
+        nodes, edges = batch
+        hierarchical_context = self.hierarchy_serializer.serialize(
+            nodes,
+            edges,
+            structure_format="markdown",
+            require_hierarchy=True,  # empty string if no hierarchical edges
+        )
         
         # Use Chinese-only templates if enabled
         if self.chinese_only:
@@ -408,7 +417,14 @@ class AtomicQuestionGenerator(AtomicGenerator):
             template = ATOMIC_QUESTION_PROMPT_CHINESE_ONLY.get("zh", ATOMIC_QUESTION_PROMPT["zh"])
         else:
             template = ATOMIC_QUESTION_PROMPT.get(language, ATOMIC_QUESTION_PROMPT["en"])
-        return template.format(context=context)
+
+        # Ensure placeholders are satisfied.
+        try:
+            return template.format(context=context, hierarchical_context=hierarchical_context)
+        except KeyError:
+            # Fallback for templates that might not have the {hierarchical_context} placeholder yet.
+            logger.warning("Template does not support {hierarchical_context}, falling back to {context} only")
+            return template.format(context=context)
 
     @staticmethod
     def parse_response(response: str) -> dict:

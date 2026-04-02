@@ -2,6 +2,8 @@ import logging
 from logging.handlers import RotatingFileHandler
 
 from rich.logging import RichHandler
+from rich.console import Console
+from rich.theme import Theme
 
 logger = logging.getLogger("arborgraph")
 
@@ -62,11 +64,24 @@ def set_logger(
         logger.handlers.clear()
 
     if if_stream:
-        console = RichHandler(
-            level=console_level, show_path=False, rich_tracebacks=True
+        theme = Theme(
+            {
+                # 给等级标签加“背景色”，更容易扫视
+                "logging.level.info": "bold white on #005f87",
+                "logging.level.warning": "bold black on #ffd75f",
+                "logging.level.error": "bold white on #d70000",
+                "logging.level.critical": "bold white on #5f005f",
+            }
         )
-        console.setFormatter(logging.Formatter("%(message)s"))
-        logger.addHandler(console)
+        console = Console(theme=theme)
+        console_handler = RichHandler(
+            level=console_level,
+            show_path=False,
+            rich_tracebacks=True,
+            console=console,
+        )
+        console_handler.setFormatter(logging.Formatter("%(message)s"))
+        logger.addHandler(console_handler)
 
     file_handler = RotatingFileHandler(
         log_file,

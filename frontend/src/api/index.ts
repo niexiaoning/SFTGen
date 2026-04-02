@@ -107,6 +107,13 @@ export const api = {
     return request.get<TaskResponse<TaskStats>>('/tasks/stats/summary')
   },
 
+  // 获取任务运行日志
+  getTaskLogs(taskId: string, offset: number = 0, limit: number = 400) {
+    return request.get<TaskResponse<any>>(`/tasks/${taskId}/logs`, {
+      params: { offset, limit }
+    })
+  },
+
   // 保存配置
   saveConfig(config: TaskConfig) {
     return request.post<TaskResponse>('/config/save', config)

@@ -2,7 +2,7 @@
 
 # ArborGraph 项目启动脚本
 # 简化版本，用于快速启动服务
-# 说明：不再启动 Gradio（webui/app.py）；`webui/` 仍保留供 task_manager/utils 等被后端与 CLI 引用。请使用 Vue 前端（frontend/）。
+# 说明：已移除旧 Gradio webui；请使用 Vue 前端（frontend/）。
 
 # 不使用 set -e，允许某些服务启动失败时继续
 set +e
@@ -63,15 +63,24 @@ activate_environment() {
 start_backend() {
     print_message "启动 FastAPI 后端服务..."
     # 增加超时和 keepalive 配置，避免 IncompleteRead 错误
-    nohup uvicorn backend.app:app --host 0.0.0.0 --port 8000 --timeout-keep-alive 300 --timeout-graceful-shutdown 10 > .backend.log 2>&1 &
+    # 通过 log-config 将 uvicorn.access 与后端日志分流（stdout 仅作为兜底）
+    nohup uvicorn backend.app:app \
+        --host 0.0.0.0 \
+        --port 8000 \
+        --timeout-keep-alive 300 \
+        --timeout-graceful-shutdown 10 \
+        --log-config backend/logging.yaml \
+        > .backend.stdout.log 2>&1 &
     BACKEND_PID=$!
     echo $BACKEND_PID > .backend.pid
     sleep 1
     if kill -0 $BACKEND_PID 2>/dev/null; then
         print_message "后端服务已启动 (PID: $BACKEND_PID)"
         print_message "后端日志: .backend.log"
+        print_message "访问日志: .backend.access.log"
+        print_message "stdout兜底: .backend.stdout.log"
     else
-        print_error "后端服务启动失败，请查看 .backend.log"
+        print_error "后端服务启动失败，请查看 .backend.stdout.log / .backend.log"
         return 1
     fi
 }
@@ -237,7 +246,7 @@ stop_services() {
     fi
     
     # 清理 PID 文件
-    rm -f .backend.pid .webui.pid .frontend.pid
+    rm -f .backend.pid .frontend.pid
     
     print_message "所有服务已停止"
 }

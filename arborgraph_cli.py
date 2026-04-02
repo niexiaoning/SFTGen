@@ -12,7 +12,7 @@ import os
 import sys
 import time
 from datetime import datetime
-from importlib.resources import files
+from pathlib import Path
 
 import pandas as pd
 import yaml
@@ -37,8 +37,9 @@ class ArborGraphCLI:
     """ArborGraph 命令行接口类"""
     
     def __init__(self):
-        self.root_dir = files("webui").parent
-        sys.path.append(self.root_dir)
+        # 旧版 CLI 依赖 webui 包来定位项目根目录；新版本改为显式使用仓库根目录
+        self.root_dir = Path(__file__).resolve().parent
+        sys.path.append(str(self.root_dir))
         load_dotenv()
         self.batch_logger = None
         self.batch_stats = {

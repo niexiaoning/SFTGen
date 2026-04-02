@@ -38,6 +38,7 @@ class TaskInfo:
     completed_at: Optional[datetime] = None
     error_message: Optional[str] = None
     output_file: Optional[str] = None
+    log_file: Optional[str] = None
     token_usage: Optional[Dict[str, int]] = None
     processing_time: Optional[float] = None
     qa_count: Optional[int] = None  # 问答对数量
@@ -119,6 +120,7 @@ class TaskManager:
                             completed_at=datetime.fromisoformat(task_data['completed_at']) if task_data.get('completed_at') else None,
                             error_message=task_data.get('error_message'),
                             output_file=task_data.get('output_file'),
+                            log_file=task_data.get('log_file'),
                             token_usage=task_data.get('token_usage'),
                             processing_time=task_data.get('processing_time'),
                             qa_count=task_data.get('qa_count'),
@@ -220,6 +222,7 @@ class TaskManager:
     def update_task_status(self, task_id: str, status: TaskStatus, 
                           error_message: Optional[str] = None,
                           output_file: Optional[str] = None,
+                          log_file: Optional[str] = None,
                           token_usage: Optional[Dict[str, int]] = None,
                           qa_count: Optional[int] = None):
         """更新任务状态"""
@@ -239,6 +242,8 @@ class TaskManager:
                     task.error_message = error_message
                 if output_file:
                     task.output_file = output_file
+                if log_file:
+                    task.log_file = log_file
                 if token_usage:
                     task.token_usage = token_usage
                 if qa_count is not None:

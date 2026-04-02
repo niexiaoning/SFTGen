@@ -41,7 +41,7 @@ class ArborGraph:
     synthesizer_llm_client: OpenAIClient = None
     trainee_llm_client: OpenAIClient = None
 
-    # webui
+    # 旧版 UI（webui）曾用该字段注入进度展示；保留为通用 UI hook
     progress_bar: Optional[Any] = None
 
     def __post_init__(self):

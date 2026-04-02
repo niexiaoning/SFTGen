@@ -75,6 +75,7 @@ export interface TaskInfo {
   completed_at?: string
   error_message?: string
   output_file?: string
+  log_file?: string
   token_usage?: {
     synthesizer_tokens: number
     synthesizer_input_tokens?: number

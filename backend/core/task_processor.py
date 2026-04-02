@@ -57,8 +57,11 @@ class TaskProcessor:
                 os.makedirs(log_dir, exist_ok=True)
             
             # 强制重新配置 logger，确保使用新的日志文件
-            set_logger(log_file, if_stream=True, force=True)
+            # 注意：后端进程的“操作日志”(uvicorn/access) 与“任务运行日志”应分离；
+            # 因此任务日志默认不输出到 stdout，避免混入 .backend.log。
+            set_logger(log_file, if_stream=False, force=True)
             logger.info(f"[TaskProcessor] 任务 {task_id} 开始处理，日志文件: {log_file}")
+            task_manager.update_task_status(task_id, TaskStatus.PROCESSING, log_file=log_file)
             
             # 保存日志文件路径，用于后续保留日志
             self._current_log_file = log_file
