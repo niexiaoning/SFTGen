@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# KGE-Gen 项目启动脚本
+# ArborGraph 项目启动脚本
 # 简化版本，用于快速启动服务
 # 说明：不再启动 Gradio（webui/app.py）；`webui/` 仍保留供 task_manager/utils 等被后端与 CLI 引用。请使用 Vue 前端（frontend/）。
 
@@ -29,7 +29,7 @@ print_error() {
 
 print_header() {
     echo -e "${BLUE}================================${NC}"
-    echo -e "${BLUE}  KGE-Gen 项目启动${NC}"
+    echo -e "${BLUE}  ArborGraph 项目启动${NC}"
     echo -e "${BLUE}================================${NC}"
 }
 
@@ -286,7 +286,7 @@ start_all() {
 
 # 显示帮助信息
 show_help() {
-    echo "KGE-Gen 项目启动脚本"
+    echo "ArborGraph 项目启动脚本"
     echo ""
     echo "用法: $0 [命令]"
     echo ""

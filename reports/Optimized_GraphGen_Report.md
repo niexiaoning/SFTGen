@@ -1001,7 +1001,7 @@ python -m graphgen.generate --config_file configs/aggregated_config.yaml --outpu
 
 # 2. Evaluate the generated QA pairs
 python -m graphgen.evaluate \
-    --folder cache/experiments/data/graphgen/1234567890/qa \
+    --folder cache/experiments/data/arborgraph/1234567890/qa \
     --output cache/experiments/results \
     --tokenizer cl100k_base \
     --reward "OpenAssistant/reward-model-deberta-v3-large-v2" \

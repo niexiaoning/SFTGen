@@ -12,7 +12,7 @@ from datetime import datetime
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from graphgen.models import OpenAIClient
+from arborgraph.models import OpenAIClient
 from backend.schemas import DataItem, ReviewStatus, AutoReviewRequest
 from backend.services.review_service import review_service
 from backend.config import settings
@@ -58,10 +58,10 @@ class AutoReviewService:
     def _get_llm_client(self) -> OpenAIClient:
         """获取LLM客户端"""
         try:
-            from graphgen.models.tokenizer.tiktoken_tokenizer import TiktokenTokenizer
+            from arborgraph.models.tokenizer.tiktoken_tokenizer import TiktokenTokenizer
             tokenizer = TiktokenTokenizer(model_name="cl100k_base")
             
-            from graphgen.models.llm.llm_env import parse_extra_body_json_strings
+            from arborgraph.models.llm.llm_env import parse_extra_body_json_strings
 
             client = OpenAIClient(
                 model_name=settings.SYNTHESIZER_MODEL,

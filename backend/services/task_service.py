@@ -503,7 +503,7 @@ class TaskService:
             # 对于 DOCX 文件，使用 DOCXReader 提取内容
             if file_ext == '.docx':
                 try:
-                    from graphgen.models import DOCXReader
+                    from arborgraph.models import DOCXReader
                     reader = DOCXReader()
                     # DOCXReader.read() 返回 list[dict]，不是 Document 对象
                     documents = reader.read(file_path)

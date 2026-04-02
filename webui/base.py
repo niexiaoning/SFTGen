@@ -5,7 +5,7 @@ from typing import Any
 @dataclass
 class WebuiParams:
     """
-    KGE-Gen parameters
+    ArborGraph parameters
     """
 
     if_trainee_model: bool

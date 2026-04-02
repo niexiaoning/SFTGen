@@ -11,11 +11,11 @@ import gradio as gr
 import pandas as pd
 from dotenv import load_dotenv
 
-from graphgen.graphgen import GraphGen
-from graphgen.models import OpenAIClient, Tokenizer
-from graphgen.models.llm.llm_env import load_merged_extra_body
-from graphgen.models.llm.limitter import RPM, TPM
-from graphgen.utils import set_logger
+from arborgraph.arborgraph import ArborGraph
+from arborgraph.models import OpenAIClient, Tokenizer
+from arborgraph.models.llm.llm_env import load_merged_extra_body
+from arborgraph.models.llm.limitter import RPM, TPM
+from arborgraph.utils import set_logger
 from webui.base import WebuiParams
 from webui.i18n import Translate
 from webui.i18n import gettext as _
@@ -39,7 +39,7 @@ css = """
 """
 
 
-def init_graph_gen(config: dict, env: dict) -> GraphGen:
+def init_arbor_graph(config: dict, env: dict) -> ArborGraph:
     # Set up working directory
     log_file, working_dir = setup_workspace(os.path.join(root_dir, "cache"))
     set_logger(log_file, if_stream=True)
@@ -71,18 +71,18 @@ def init_graph_gen(config: dict, env: dict) -> GraphGen:
         ),
     )
 
-    graph_gen = GraphGen(
+    arbor_graph = ArborGraph(
         working_dir=working_dir,
         tokenizer_instance=tokenizer_instance,
         synthesizer_llm_client=synthesizer_llm_client,
         trainee_llm_client=trainee_llm_client,
     )
 
-    return graph_gen
+    return arbor_graph
 
 
 # pylint: disable=too-many-statements
-def run_graphgen(params: WebuiParams, progress=gr.Progress()):
+def run_arborgraph(params: WebuiParams, progress=gr.Progress()):
     def sum_tokens(client):
         return sum(u["total_tokens"] for u in client.token_usage)
 
@@ -154,35 +154,35 @@ def run_graphgen(params: WebuiParams, progress=gr.Progress()):
     #         env["TRAINEE_BASE_URL"], env["TRAINEE_API_KEY"], env["TRAINEE_MODEL"]
     #     )
 
-    # Initialize KGE-Gen
-    graph_gen = init_graph_gen(config, env)
-    graph_gen.clear()
+    # Initialize ArborGraph
+    arbor_graph = init_arbor_graph(config, env)
+    arbor_graph.clear()
 
-    graph_gen.progress_bar = progress
+    arbor_graph.progress_bar = progress
 
     try:
         # Process the data
-        graph_gen.insert(read_config=config["read"], split_config=config["split"])
+        arbor_graph.insert(read_config=config["read"], split_config=config["split"])
 
         if config["if_trainee_model"]:
-            graph_gen.quiz_and_judge(quiz_and_judge_config=config["quiz_and_judge"])
+            arbor_graph.quiz_and_judge(quiz_and_judge_config=config["quiz_and_judge"])
 
-        graph_gen.generate(
+        arbor_graph.generate(
             partition_config=config["partition"],
             generate_config=config["generate"],
         )
 
         # Save output
-        output_data = graph_gen.qa_storage.data
+        output_data = arbor_graph.qa_storage.data
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".jsonl", delete=False, encoding="utf-8"
         ) as tmpfile:
             json.dump(output_data, tmpfile, ensure_ascii=False)
             output_file = tmpfile.name
 
-        synthesizer_tokens = sum_tokens(graph_gen.synthesizer_llm_client)
+        synthesizer_tokens = sum_tokens(arbor_graph.synthesizer_llm_client)
         trainee_tokens = (
-            sum_tokens(graph_gen.trainee_llm_client)
+            sum_tokens(arbor_graph.trainee_llm_client)
             if config["if_trainee_model"]
             else 0
         )
@@ -214,7 +214,7 @@ def run_graphgen(params: WebuiParams, progress=gr.Progress()):
 
     finally:
         # Clean up workspace
-        cleanup_workspace(graph_gen.working_dir)
+        cleanup_workspace(arbor_graph.working_dir)
 
 
 # 任务管理相关函数
@@ -333,11 +333,11 @@ def get_task_details(task_id: str) -> str:
     return "任务不存在"
 
 
-with gr.Blocks(title="KGE-Gen Demo") as demo:
+with gr.Blocks(title="ArborGraph Demo") as demo:
     # Header（Gradio 6+ 已移除 Image 的 show_download_button 等参数）
     gr.Image(
         value=os.path.join(root_dir, "resources", "images", "logo.png"),
-        label="KGE-Gen Banner",
+        label="ArborGraph Banner",
         elem_id="banner",
         interactive=False,
         container=False,
@@ -357,14 +357,14 @@ with gr.Blocks(title="KGE-Gen Demo") as demo:
     gr.HTML(
         """
     <div style="display: flex; gap: 8px; margin-left: auto; align-items: center; justify-content: center;">
-        <a href="https://github.com/open-sciencelab/GraphGen/releases">
+        <a href="https://github.com/open-sciencelab/ArborGraph/releases">
             <img src="https://img.shields.io/badge/Version-v0.1.0-blue" alt="Version">
         </a>
-        <a href="https://graphgen-docs.example.com">
+        <a href="https://arborgraph-docs.example.com">
             <img src="https://img.shields.io/badge/Docs-Latest-brightgreen" alt="Documentation">
         </a>
-        <a href="https://github.com/open-sciencelab/GraphGen/issues/10">
-            <img src="https://img.shields.io/github/stars/open-sciencelab/GraphGen?style=social" alt="GitHub Stars">
+        <a href="https://github.com/open-sciencelab/ArborGraph/issues/10">
+            <img src="https://img.shields.io/github/stars/open-sciencelab/ArborGraph?style=social" alt="GitHub Stars">
         </a>
         <a href="https://arxiv.org/abs/2505.20416">
             <img src="https://img.shields.io/badge/arXiv-pdf-yellow" alt="arXiv">
@@ -689,7 +689,7 @@ with gr.Blocks(title="KGE-Gen Demo") as demo:
                     interactive=False,
                 )
 
-        submit_btn = gr.Button(_("Run KGE-Gen"))
+        submit_btn = gr.Button(_("Run ArborGraph"))
         
         # 任务管理界面
         with gr.Tab("任务管理"):
@@ -777,7 +777,7 @@ with gr.Blocks(title="KGE-Gen Demo") as demo:
             outputs=token_counter,
         )
 
-        # run GraphGen
+        # run ArborGraph
         # 修改提交按钮逻辑 - 创建任务而不是直接处理
         def create_and_start_task(*args):
             """创建任务并启动处理"""
@@ -826,7 +826,7 @@ with gr.Blocks(title="KGE-Gen Demo") as demo:
                 return gr.update(value="任务创建失败"), gr.update(value="任务创建失败")
 
         submit_btn.click(
-            lambda *args: run_graphgen(
+            lambda *args: run_arborgraph(
                 WebuiParams(**dict(zip(WebuiParams.__annotations__, args)))
             ),
             inputs=[

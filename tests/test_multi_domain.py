@@ -1,5 +1,5 @@
 """
-End-to-end validation for multi_domain DA-ToG.
+End-to-end validation for multi_domain ArborGraph-Intent.
 
 Verifies that the same pipeline code can handle different domain
 configurations (Finance and Cybersecurity).
@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from graphgen.datog_pipeline import DAToGPipeline
+from arborgraph.intent_pipeline import IntentPipeline
 
 
 class MockGraphStorage:
@@ -36,7 +36,7 @@ class TestMultiDomainValidation:
         graph = MockGraphStorage()
         
         # Load pipeline from config
-        pipeline = DAToGPipeline.from_config(
+        pipeline = IntentPipeline.from_config(
             config_path=config_path,
             llm_client=mock_llm,
             graph_storage=graph,
@@ -46,17 +46,17 @@ class TestMultiDomainValidation:
         results = await pipeline.run(target_count=2, batch_size=5)
         
         assert len(results) > 0
-        assert results[0]["metadata"]["pipeline"] == "datog"
+        assert results[0]["metadata"]["pipeline"] == "intent"
         return results
 
     def test_finance_domain(self):
         async def _run():
-            results = await self._test_domain("graphgen/configs/datog/finance/datog_config.yaml")
+            results = await self._test_domain("arborgraph/configs/intent/finance/intent_config.yaml")
             assert len(results) > 0
         asyncio.run(_run())
 
     def test_cybersecurity_domain(self):
         async def _run():
-            results = await self._test_domain("graphgen/configs/datog/cybersecurity/datog_config.yaml")
+            results = await self._test_domain("arborgraph/configs/intent/cybersecurity/intent_config.yaml")
             assert len(results) > 0
         asyncio.run(_run())

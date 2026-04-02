@@ -10,11 +10,11 @@ import time
 from typing import Dict, Any, Optional
 import json
 
-from graphgen.graphgen import GraphGen
-from graphgen.models import OpenAIClient, Tokenizer
-from graphgen.models.llm.llm_env import load_merged_extra_body
-from graphgen.models.llm.limitter import RPM, TPM
-from graphgen.utils import set_logger
+from arborgraph.arborgraph import ArborGraph
+from arborgraph.models import OpenAIClient, Tokenizer
+from arborgraph.models.llm.llm_env import load_merged_extra_body
+from arborgraph.models.llm.limitter import RPM, TPM
+from arborgraph.utils import set_logger
 from webui.utils import cleanup_workspace, setup_workspace
 from webui.task_manager import task_manager, TaskStatus, TaskInfo
 from webui.base import WebuiParams
@@ -60,9 +60,9 @@ class TaskProcessor:
             config = self._build_config(params)
             env = self._build_env(params)
             
-            # 初始化 KGE-Gen
-            graph_gen = GraphGen(working_dir=working_dir, config=config)
-            graph_gen.clear()
+            # 初始化 ArborGraph
+            arbor_graph = ArborGraph(working_dir=working_dir, config=config)
+            arbor_graph.clear()
             
             # 设置 LLM 客户端
             tokenizer_instance = Tokenizer(config.get("tokenizer", "cl100k_base"))
@@ -92,7 +92,7 @@ class TaskProcessor:
                 ),
             )
             
-            graph_gen = GraphGen(
+            arbor_graph = ArborGraph(
                 working_dir=working_dir,
                 tokenizer_instance=tokenizer_instance,
                 synthesizer_llm_client=synthesizer_llm_client,
@@ -100,18 +100,18 @@ class TaskProcessor:
             )
             
             # 处理数据
-            graph_gen.insert(read_config=config["read"], split_config=config["split"])
+            arbor_graph.insert(read_config=config["read"], split_config=config["split"])
             
             if config["if_trainee_model"]:
-                graph_gen.quiz_and_judge(quiz_and_judge_config=config["quiz_and_judge"])
+                arbor_graph.quiz_and_judge(quiz_and_judge_config=config["quiz_and_judge"])
             
-            graph_gen.generate(
+            arbor_graph.generate(
                 partition_config=config["partition"],
                 generate_config=config["generate"],
             )
             
             # 保存输出
-            output_data = graph_gen.qa_storage.data
+            output_data = arbor_graph.qa_storage.data
             output_file = task_manager.get_task_output_path(task_id)
             
             with open(output_file, 'w', encoding='utf-8') as f:
@@ -121,9 +121,9 @@ class TaskProcessor:
             def sum_tokens(client):
                 return sum(u["total_tokens"] for u in client.token_usage)
             
-            synthesizer_tokens = sum_tokens(graph_gen.synthesizer_llm_client)
+            synthesizer_tokens = sum_tokens(arbor_graph.synthesizer_llm_client)
             trainee_tokens = (
-                sum_tokens(graph_gen.trainee_llm_client)
+                sum_tokens(arbor_graph.trainee_llm_client)
                 if config["if_trainee_model"]
                 else 0
             )

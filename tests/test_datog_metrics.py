@@ -1,10 +1,10 @@
 """
-Tests for DA-ToG Phase 6: Evaluation Metrics.
+Tests for ArborGraph-Intent Phase 6: Evaluation Metrics.
 """
 
 import pytest
-from graphgen.models.taxonomy.taxonomy_tree import TaxonomyTree
-from graphgen.utils.datog_metrics import DAToGMetrics
+from arborgraph.models.taxonomy.taxonomy_tree import TaxonomyTree
+from arborgraph.utils.intent_metrics import IntentMetrics
 
 SAMPLE_TREE = {
     "name": "Test Tree",
@@ -24,7 +24,7 @@ SAMPLE_TREE = {
 
 def test_coverage_calculation():
     tree = TaxonomyTree.from_dict(SAMPLE_TREE)
-    metrics = DAToGMetrics(tree)
+    metrics = IntentMetrics(tree)
     
     # Results cover root and leaf1
     results = [
@@ -45,7 +45,7 @@ def test_coverage_calculation():
 
 def test_distribution_calculation():
     tree = TaxonomyTree.from_dict(SAMPLE_TREE)
-    metrics = DAToGMetrics(tree)
+    metrics = IntentMetrics(tree)
     
     results = [
         {"metadata": {"cognitive_dimension": "A"}},

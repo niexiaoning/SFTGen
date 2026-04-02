@@ -69,7 +69,7 @@ config = TaskConfig(
 
 ### Programmatic Usage
 ```python
-from graphgen.models import HierarchicalPartitioner, TreeStructureGenerator
+from arborgraph.models import HierarchicalPartitioner, TreeStructureGenerator
 
 # Partition
 partitioner = HierarchicalPartitioner(

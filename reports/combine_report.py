@@ -1,9 +1,9 @@
 '''
 import os
 
-SECTIONS_DIR = "/home/ubuntu/graphgen_report/optimized_sections"
-DIAGRAMS_DIR = "/home/ubuntu/graphgen_report/diagrams"
-OUTPUT_FILE = "/home/ubuntu/graphgen_report/Optimized_GraphGen_Report.md"
+SECTIONS_DIR = "/home/ubuntu/arborgraph_report/optimized_sections"
+DIAGRAMS_DIR = "/home/ubuntu/arborgraph_report/diagrams"
+OUTPUT_FILE = "/home/ubuntu/arborgraph_report/Optimized_ArborGraph_Report.md"
 
 def insert_diagram(content, placeholder, diagram_name, title):
     "Inserts a diagram into the content by replacing a placeholder."
@@ -68,7 +68,7 @@ def main():
 │  合成QA数据集   │
 └─────────────────┘
 ```"""
-            content = content.replace(ascii_art_placeholder, "![GraphGen 整体流程图](./diagrams/overall_flow.png)")
+            content = content.replace(ascii_art_placeholder, "![ArborGraph 整体流程图](./diagrams/overall_flow.png)")
             content = insert_diagram(content, "#### 3.2.2 理解损失计算", "ece_assessment.png", "ECE 理解评估流程图")
             content = insert_diagram(content, "#### 3.2.3 子图采样策略", "bfs_sampling.png", "BFS 子图采样流程图")
 

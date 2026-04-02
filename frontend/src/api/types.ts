@@ -248,8 +248,8 @@ export interface ReviewStats {
   auto_rejected: number
 }
 
-// DA-ToG (Domain-Agnostic Tree-of-Graphs) 相关类型
-export interface DAToGConfig {
+// ArborGraph-Intent (Domain-Agnostic Tree-of-Graphs) 相关类型
+export interface IntentConfig {
   taxonomy_path: string
   domain?: string
   sampling_strategy?: 'coverage' | 'uniform_branch' | 'depth_weighted'
@@ -262,7 +262,7 @@ export interface DAToGConfig {
   batch_size?: number
 }
 
-export interface DAToGPipelineConfig {
+export interface IntentPipelineConfig {
   domain_config_path: string
   taxonomy_path?: string
   input_file?: string
@@ -272,7 +272,7 @@ export interface DAToGPipelineConfig {
   source_document?: string
 }
 
-export interface DAToGTaxonomy {
+export interface IntentTaxonomy {
   id: string
   name: string
   path: string
@@ -305,8 +305,8 @@ export interface PipelineTaskStatus {
   progress?: number
 }
 
-// DA-ToG 指标相关类型
-export interface DAToGMetricsReport {
+// ArborGraph-Intent 指标相关类型
+export interface IntentMetricsReport {
   coverage: {
     overall_ratio: number
     by_dimension: Record<string, number>

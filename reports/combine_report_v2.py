@@ -2,9 +2,9 @@
 import os
 import re
 
-SECTIONS_DIR = "/home/ubuntu/graphgen_report/optimized_sections"
-DIAGRAMS_DIR = "/home/ubuntu/graphgen_report/diagrams"
-OUTPUT_FILE = "/home/ubuntu/graphgen_report/Optimized_GraphGen_Report.md"
+SECTIONS_DIR = "/home/ubuntu/arborgraph_report/optimized_sections"
+DIAGRAMS_DIR = "/home/ubuntu/arborgraph_report/diagrams"
+OUTPUT_FILE = "/home/ubuntu/arborgraph_report/Optimized_ArborGraph_Report.md"
 
 def main():
     """Combines optimized sections and inserts diagrams to create the final report."""
@@ -21,7 +21,7 @@ def main():
         if "section_03" in section_file:
             # Use a regex to find the ASCII art block, as it's brittle to match exactly.
             ascii_art_pattern = re.compile(r"```\n┌.*?└─────────────────┘\n```", re.DOTALL)
-            content = ascii_art_pattern.sub("![GraphGen 整体流程图](./diagrams/overall_flow.png)", content)
+            content = ascii_art_pattern.sub("![ArborGraph 整体流程图](./diagrams/overall_flow.png)", content)
 
             # Insert other diagrams based on headers
             content = content.replace("#### 3.2.2 理解损失计算", 

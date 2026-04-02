@@ -8,8 +8,8 @@ import sys
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(__file__))
 
-from graphgen.models.tokenizer import Tokenizer
-from graphgen.models.tokenizer.tiktoken_tokenizer import get_local_tokenizer_cache_dir
+from arborgraph.models.tokenizer import Tokenizer
+from arborgraph.models.tokenizer.tiktoken_tokenizer import get_local_tokenizer_cache_dir
 
 
 def test_local_cache_dir():

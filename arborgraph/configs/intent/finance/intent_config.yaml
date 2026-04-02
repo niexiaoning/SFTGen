@@ -1,0 +1,16 @@
+intent:
+  taxonomy:
+    path: arborgraph/configs/intent/finance/taxonomy.json
+    sampling_strategy: coverage
+  graph:
+    adapter: networkx
+    max_hops: 2
+    max_nodes_per_subgraph: 20
+    serialization_format: natural_language
+  critic:
+    type: rule
+    min_score: 0.6
+  generation:
+    target_qa_pairs: 50
+    batch_size: 10
+    data_format: Alpaca

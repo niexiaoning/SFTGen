@@ -7,7 +7,7 @@ import pandas as pd
 # pylint: disable=wrong-import-position
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(root_dir)
-from graphgen.models import Tokenizer
+from arborgraph.models import Tokenizer
 
 
 def count_tokens(file, tokenizer_name, data_frame):

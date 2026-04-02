@@ -8,10 +8,10 @@ import os
 # Add project root to sys.path to ensure imports work
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from graphgen.utils.hierarchy_utils import HierarchySerializer
-from graphgen.models.generator.atomic_generator import AtomicGenerator
-from graphgen.models.generator.aggregated_generator import AggregatedGenerator
-from graphgen.models.generator.cot_generator import CoTGenerator
+from arborgraph.utils.hierarchy_utils import HierarchySerializer
+from arborgraph.models.generator.atomic_generator import AtomicGenerator
+from arborgraph.models.generator.aggregated_generator import AggregatedGenerator
+from arborgraph.models.generator.cot_generator import CoTGenerator
 
 class TestHierarchyInjection(unittest.TestCase):
     def setUp(self):
