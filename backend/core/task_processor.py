@@ -18,8 +18,8 @@ from arborgraph.models import OpenAIClient, Tokenizer
 from arborgraph.models.llm.limitter import RPM, TPM
 from arborgraph.models.llm.llm_env import load_merged_extra_body
 from arborgraph.utils import set_logger, logger
-from webui.task_manager import task_manager, TaskStatus
-from webui.utils import setup_workspace
+from backend.utils.task_manager import task_manager, TaskStatus
+from backend.utils.workspace import setup_workspace
 from backend.schemas import TaskConfig
 
 

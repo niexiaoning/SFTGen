@@ -1,22 +1,31 @@
+# ArborGraph - Core Dependencies
 tqdm
 openai
 python-dotenv
 numpy
 networkx
-# graspologic
 tiktoken
-pyecharts
-wikipedia
-tenacity
-nltk
-jieba
-plotly
-pandas
-# gradio>=5.44.1
-kaleido
 pyyaml
 langcodes
 requests
+tenacity
+
+# NLP & Text Processing
+nltk
+jieba
+trafilatura
+transformers
+python-docx
+
+# Data Processing
+pandas
+
+# Graph Algorithms
+leidenalg
+igraph
+python-louvain
+
+# Web Backend (FastAPI)
 fastapi
 uvicorn
 python-multipart
@@ -24,13 +33,12 @@ pydantic-settings
 python-jose[cryptography]
 passlib[bcrypt]
 pydantic[email]
-trafilatura
-transformers
-python-docx
 
-leidenalg
-igraph
-python-louvain
-
-# For visualization
+# Visualization
+pyecharts
+plotly
+kaleido
 matplotlib
+
+# Search
+wikipedia

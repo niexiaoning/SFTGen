@@ -24,7 +24,7 @@ from arborgraph.models import OpenAIClient, Tokenizer
 from arborgraph.models.llm.limitter import RPM, TPM
 from arborgraph.models.llm.llm_env import load_merged_extra_body
 from arborgraph.utils import set_logger
-from webui.utils import cleanup_workspace, setup_workspace
+from backend.utils.workspace import cleanup_workspace, setup_workspace
 
 # ArborGraph-Intent imports
 from arborgraph.intent_pipeline import IntentPipeline
