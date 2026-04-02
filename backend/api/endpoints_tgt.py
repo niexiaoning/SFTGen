@@ -102,7 +102,7 @@ async def save_tgt_config(
     return JSONResponse(content={"success": True, "message": "配置保存成功"})
 
 
-@router.post("/tgt/config/load")
+@router.get("/tgt/config/load")
 async def load_tgt_config(
     current_user: User = Depends(get_current_user),
 ):
