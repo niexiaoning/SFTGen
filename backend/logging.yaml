@@ -1,11 +1,10 @@
 version: 1
 disable_existing_loggers: false
 
+# 单一后端日志：应用日志 + uvicorn 错误 + HTTP 访问日志均写入 .backend.log
 formatters:
   default:
-    format: "[%(asctime)s] %(levelname)s [%(name)s:%(filename)s:%(lineno)d] %(message)s"
-    datefmt: "%y-%m-%d %H:%M:%S"
-  access:
+    # 访问日志与业务日志共用；访问记录通常无 filename/lineno，故统一用 name + message
     format: "[%(asctime)s] %(levelname)s [%(name)s] %(message)s"
     datefmt: "%y-%m-%d %H:%M:%S"
 
@@ -15,14 +14,6 @@ handlers:
     level: INFO
     formatter: default
     filename: ".backend.log"
-    maxBytes: 52428800  # 50MB
-    backupCount: 5
-    encoding: utf-8
-  access_file:
-    class: logging.handlers.RotatingFileHandler
-    level: INFO
-    formatter: access
-    filename: ".backend.access.log"
     maxBytes: 52428800  # 50MB
     backupCount: 5
     encoding: utf-8
@@ -38,7 +29,7 @@ loggers:
     propagate: false
   uvicorn.access:
     level: INFO
-    handlers: [access_file]
+    handlers: [backend_file]
     propagate: false
 
   backend:
@@ -49,4 +40,3 @@ loggers:
 root:
   level: WARNING
   handlers: [backend_file]
-
