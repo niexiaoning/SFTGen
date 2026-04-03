@@ -470,7 +470,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
 import { useConfigStore } from '@/stores/config'
@@ -535,18 +535,83 @@ const evaluationStats = ref<any>({
   generated_at: null
 })
 
+const stopTaskRefreshTimer = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+const startTaskRefreshTimer = () => {
+  if (refreshTimer) return
+  if (task.value?.status !== 'processing') return
+  refreshTimer = window.setInterval(() => {
+    fetchTaskDetail(true)
+  }, 3000)
+}
+
+const stopLogTimer = () => {
+  if (logTimer) {
+    clearInterval(logTimer)
+    logTimer = null
+  }
+}
+
+const startLogTimer = () => {
+  if (logTimer) return
+  if (task.value?.status !== 'processing') return
+  if (!task.value?.log_file) return
+  if (!logAutoRefresh.value) return
+  logTimer = window.setInterval(() => {
+    refreshLog(false)
+  }, 2000)
+}
+
+/** 根据任务状态启停轮询：仅 processing 时拉任务详情与日志；终态时停表并补拉一次完整日志 */
+const syncPollingTimers = async (prevStatus: string | undefined) => {
+  const status = task.value?.status
+  const terminal = status === 'completed' || status === 'failed'
+
+  if (status === 'processing') {
+    startTaskRefreshTimer()
+    if (logAutoRefresh.value && task.value?.log_file) {
+      startLogTimer()
+    } else {
+      stopLogTimer()
+    }
+  } else {
+    stopTaskRefreshTimer()
+    stopLogTimer()
+    if (prevStatus === 'processing' && terminal) {
+      await refreshLog(true)
+    }
+  }
+}
+
 // 获取任务详情
-const fetchTaskDetail = async () => {
-  loading.value = true
+const fetchTaskDetail = async (silent: boolean = false) => {
+  if (!silent) loading.value = true
+  const prevStatus = task.value?.status
   try {
     const data = await taskStore.fetchTask(taskId)
     if (data) {
       task.value = data
     }
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
   }
+  await syncPollingTimers(prevStatus)
 }
+
+watch(logAutoRefresh, () => {
+  if (task.value?.status === 'processing') {
+    if (logAutoRefresh.value && task.value?.log_file) {
+      startLogTimer()
+    } else {
+      stopLogTimer()
+    }
+  }
+})
 
 const refreshLog = async (forceFull: boolean = false) => {
   if (!task.value?.log_file) return
@@ -915,32 +980,17 @@ const handleDownloadEvaluation = async () => {
 
 onMounted(async () => {
   await fetchTaskDetail()
-  // 初次拉取日志（如果有）
+  // 初次拉取日志（若有 log_file）；终态下由 syncPollingTimers 也会补拉一次
   await refreshLog(true)
   // 只有评测任务才加载评测数据
   if (task.value?.task_type === 'evaluation') {
     await loadEvaluationData()
   }
-  // 如果任务正在处理中，启动自动刷新
-  if (task.value?.status === 'processing') {
-    refreshTimer = window.setInterval(() => {
-      fetchTaskDetail()
-    }, 3000)
-  }
-
-  // 日志轮询（独立于任务状态，方便看 completed/failed 的尾部）
-  logTimer = window.setInterval(() => {
-    if (logAutoRefresh.value) refreshLog(false)
-  }, 2000)
 })
 
 onUnmounted(() => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-  }
-  if (logTimer) {
-    clearInterval(logTimer)
-  }
+  stopTaskRefreshTimer()
+  stopLogTimer()
 })
 </script>
 
