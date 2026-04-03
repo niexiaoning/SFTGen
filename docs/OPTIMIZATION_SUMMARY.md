@@ -238,16 +238,16 @@ max_batch_size: 50
 
 ```bash
 # 使用atomic模式（已优化）
-python graphgen_cli.py --config graphgen/configs/atomic_config.yaml
+python arborgraph_cli.py --config graphgen/configs/atomic_config.yaml
 
 # 使用aggregated模式（已优化）
-python graphgen_cli.py --config graphgen/configs/aggregated_config.yaml
+python arborgraph_cli.py --config graphgen/configs/aggregated_config.yaml
 
 # 使用cot模式（已优化）
-python graphgen_cli.py --config graphgen/configs/cot_config.yaml
+python arborgraph_cli.py --config graphgen/configs/cot_config.yaml
 
 # 使用multi_hop模式（已优化）
-python graphgen_cli.py --config graphgen/configs/multi_hop_config.yaml
+python arborgraph_cli.py --config graphgen/configs/multi_hop_config.yaml
 ```
 
 ### 自定义优化参数
@@ -321,7 +321,7 @@ enable_prompt_merging: false
 
 ```bash
 # 清理所有缓存
-python graphgen_cli.py --clear-cache
+python arborgraph_cli.py --clear-cache
 
 # 或手动删除
 rm -rf cache/extraction_cache

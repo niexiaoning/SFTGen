@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Domain instantiation script for DA-ToG.
+Domain instantiation script for ArborGraph-Intent.
 
 Automates complete workflow for a new domain:
 1. Build KG from domain documents
 2. Load or auto-generate taxonomy tree
-3. Run DA-ToG pipeline
+3. Run ArborGraph-Intent pipeline
 4. Generate metrics report
 """
 
@@ -23,12 +23,12 @@ import yaml
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from graphgen.datog_pipeline import DAToGPipeline
-from graphgen.graphgen import GraphGen
-from graphgen.models.taxonomy.taxonomy_tree import TaxonomyTree
-from graphgen.models.taxonomy.auto_taxonomy import AutoTaxonomy
-from graphgen.models.storage.networkx_storage import NetworkXStorage
-from graphgen.utils.datog_metrics import DAToGMetrics
+from arborgraph.intent_pipeline import IntentPipeline
+from arborgraph.arborgraph import ArborGraph
+from arborgraph.models.taxonomy.taxonomy_tree import TaxonomyTree
+from arborgraph.models.taxonomy.auto_taxonomy import AutoTaxonomy
+from arborgraph.models.storage.networkx_storage import NetworkXStorage
+from arborgraph.utils.intent_metrics import IntentMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +41,7 @@ async def run_domain(
     source_document: Optional[str] = None,
 ):
     """
-    Run DA-ToG pipeline for a domain.
+    Run ArborGraph-Intent pipeline for a domain.
 
     :param domain_dir: Directory containing domain config
     :param output_dir: Output directory for results
@@ -50,28 +50,28 @@ async def run_domain(
     :param source_document: Path to domain document for auto-taxonomy generation
     """
     domain_dir = Path(domain_dir)
-    config_path = domain_dir / "datog_config.yaml"
+    config_path = domain_dir / "intent_config.yaml"
 
     if not config_path.exists():
-        raise FileNotFoundError(f"datog_config.yaml not found in {domain_dir}")
+        raise FileNotFoundError(f"intent_config.yaml not found in {domain_dir}")
 
     # Load config
     with open(config_path, "r", encoding="utf-8") as f:
         config_data = yaml.safe_load(f)
 
-    datog_config = config_data.get("datog", config_data)
+    intent_config = config_data.get("intent", config_data)
 
     # Setup output directory
     output_dir = Path(output_dir or domain_dir / "output")
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Setup LLM client (simplified - assumes OpenAI compatible)
-    # For proper implementation, use the same LLM setup as graphgen_cli.py
+    # For proper implementation, use the same LLM setup as arborgraph_cli.py
     from dotenv import load_dotenv
     load_dotenv()
 
     # Simple LLM client setup for demonstration
-    # In production, integrate with proper graphgen_cli.py LLM client
+    # In production, integrate with proper arborgraph_cli.py LLM client
     api_key = os.environ.get("SYNTHESIZER_API_KEY", "")
     api_base = os.environ.get("SYNTHESIZER_BASE_URL", "")
     api_model = os.environ.get("SYNTHESIZER_MODEL", "")
@@ -129,7 +129,7 @@ async def run_domain(
             graph_storage = None
 
     # Step 2: Load or generate taxonomy
-    taxonomy_config = datog_config.get("taxonomy", {})
+    taxonomy_config = intent_config.get("taxonomy", {})
     taxonomy_path = taxonomy_config.get("path")
 
     if generate_taxonomy and source_document:
@@ -137,7 +137,7 @@ async def run_domain(
         with open(source_document, "r", encoding="utf-8") as f:
             doc_text = f.read()
 
-        domain_name = datog_config.get("taxonomy", {}).get("domain", "general")
+        domain_name = intent_config.get("taxonomy", {}).get("domain", "general")
 
         # Note: AutoTaxonomy needs to be implemented or use different approach
         logger.warning("Auto-taxonomy generation requires AutoTaxonomy implementation")
@@ -161,13 +161,13 @@ async def run_domain(
         logger.error("No knowledge graph available. Provide --kg-path or --generate-taxonomy is not available")
         return None
 
-    # Step 3: Run DA-ToG pipeline
+    # Step 3: Run ArborGraph-Intent pipeline
     try:
-        logger.info("Initializing DA-ToG pipeline...")
-        pipeline = DAToGPipeline.from_config(str(config_path), llm_client, graph_storage)
+        logger.info("Initializing ArborGraph-Intent pipeline...")
+        pipeline = IntentPipeline.from_config(str(config_path), llm_client, graph_storage)
 
-        target_count = datog_config.get("generation", {}).get("target_qa_pairs", 100)
-        batch_size = datog_config.get("generation", {}).get("batch_size", 10)
+        target_count = intent_config.get("generation", {}).get("target_qa_pairs", 100)
+        batch_size = intent_config.get("generation", {}).get("batch_size", 10)
 
         logger.info(f"Generating {target_count} QA pairs (batch_size: {batch_size})")
 
@@ -180,7 +180,7 @@ async def run_domain(
             json.dump(results, f, ensure_ascii=False, indent=2)
 
         # Step 5: Generate metrics report
-        metrics = DAToGMetrics(tree)
+        metrics = IntentMetrics(tree)
         report = metrics.calculate_coverage(results)
         report["distribution"] = metrics.calculate_distribution(results)
 
@@ -196,7 +196,7 @@ async def run_domain(
         return str(results_file), str(metrics_file)
 
     except Exception as e:
-        logger.error(f"Error running DA-ToG pipeline: {e}")
+        logger.error(f"Error running ArborGraph-Intent pipeline: {e}")
         import traceback
         traceback.print_exc()
         return None
@@ -204,11 +204,11 @@ async def run_domain(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Run DA-ToG pipeline for a specific domain"
+        description="Run ArborGraph-Intent pipeline for a specific domain"
     )
     parser.add_argument(
         "--domain", "-d", required=True,
-        help="Directory containing domain config (e.g., graphgen/configs/datog/finance)"
+        help="Directory containing domain config (e.g., arborgraph/configs/intent/finance)"
     )
     parser.add_argument(
         "--output", "-o",
@@ -247,11 +247,11 @@ def main():
     ))
 
     if results:
-        print("✅ DA-ToG pipeline completed successfully!")
+        print("✅ ArborGraph-Intent pipeline completed successfully!")
         print(f"📊 Results: {results[0]}")
         print(f"📊 Metrics: {results[1]}")
     else:
-        print("❌ DA-ToG pipeline failed")
+        print("❌ ArborGraph-Intent pipeline failed")
         sys.exit(1)
 
 

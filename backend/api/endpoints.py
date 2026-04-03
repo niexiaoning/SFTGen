@@ -25,6 +25,7 @@ from backend.schemas import (
 from backend.services.task_service import task_service
 from backend.services.file_service import file_service
 from backend.services.config_service import config_service
+from backend.services.log_service import log_service
 from backend.services.review_service import review_service
 from backend.services.auto_review_service import auto_review_service
 from backend.services.auth_service import auth_service
@@ -210,6 +211,17 @@ async def get_task_summary():
     """获取任务统计摘要"""
     result = task_service.get_task_stats()
     return result
+
+
+@router.get("/tasks/{task_id}/logs", response_model=TaskResponse)
+async def get_task_logs(
+    task_id: str,
+    offset: int = 0,
+    limit: int = 400,
+    current_user: User = Depends(get_current_active_user),
+):
+    """读取任务运行日志（需要登录）"""
+    return log_service.read_task_log(task_id=task_id, offset=offset, limit=limit)
 
 
 @router.post("/config/save", response_model=TaskResponse)
@@ -409,7 +421,7 @@ async def get_evaluation_dataset(
     """获取任务的评测集（需要登录）"""
     import os
     import json
-    from webui.task_manager import task_manager
+    from backend.utils.task_manager import task_manager
     
     # 获取任务信息
     task = task_manager.get_task(task_id)
@@ -446,7 +458,7 @@ async def get_evaluation_stats(
     """获取评测集统计信息（需要登录）"""
     import os
     import json
-    from webui.task_manager import task_manager
+    from backend.utils.task_manager import task_manager
     
     # 获取任务信息
     task = task_manager.get_task(task_id)
@@ -497,7 +509,7 @@ async def download_evaluation_dataset(
         format: 下载格式，'json' 或 'csv'
     """
     import os
-    from webui.task_manager import task_manager
+    from backend.utils.task_manager import task_manager
     
     # 获取任务信息
     task = task_manager.get_task(task_id)

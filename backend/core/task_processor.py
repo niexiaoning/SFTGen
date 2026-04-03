@@ -1,6 +1,6 @@
 """
 任务处理器
-负责执行具体的KGE-Gen任务
+负责执行具体的ArborGraph任务
 """
 
 import os
@@ -13,13 +13,13 @@ from datetime import datetime
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from graphgen.graphgen import GraphGen
-from graphgen.models import OpenAIClient, Tokenizer
-from graphgen.models.llm.limitter import RPM, TPM
-from graphgen.models.llm.llm_env import load_merged_extra_body
-from graphgen.utils import set_logger, logger
-from webui.task_manager import task_manager, TaskStatus
-from webui.utils import setup_workspace
+from arborgraph.arborgraph import ArborGraph
+from arborgraph.models import OpenAIClient, Tokenizer
+from arborgraph.models.llm.limitter import RPM, TPM
+from arborgraph.models.llm.llm_env import load_merged_extra_body
+from arborgraph.utils import set_logger, logger
+from backend.utils.task_manager import task_manager, TaskStatus
+from backend.utils.workspace import setup_workspace
 from backend.schemas import TaskConfig
 
 
@@ -43,7 +43,7 @@ class TaskProcessor:
             task_manager.update_task_status(task_id, TaskStatus.PROCESSING)
             
             # 初始化配置
-            graphgen_config = self._build_config(config, task.filepaths)
+            arborgraph_config = self._build_config(config, task.filepaths)
             env = self._build_env(config)
             
             # 设置工作目录（文件夹名称前面加上时间戳）
@@ -57,14 +57,17 @@ class TaskProcessor:
                 os.makedirs(log_dir, exist_ok=True)
             
             # 强制重新配置 logger，确保使用新的日志文件
-            set_logger(log_file, if_stream=True, force=True)
+            # 注意：后端进程的“操作日志”(uvicorn/access) 与“任务运行日志”应分离；
+            # 因此任务日志默认不输出到 stdout，避免混入 .backend.log。
+            set_logger(log_file, if_stream=False, force=True)
             logger.info(f"[TaskProcessor] 任务 {task_id} 开始处理，日志文件: {log_file}")
+            task_manager.update_task_status(task_id, TaskStatus.PROCESSING, log_file=log_file)
             
             # 保存日志文件路径，用于后续保留日志
             self._current_log_file = log_file
             os.environ.update({k: str(v) for k, v in env.items()})
             
-            # 初始化 KGE-Gen
+            # 初始化 ArborGraph
             tokenizer_instance = Tokenizer(config.tokenizer)
             synthesizer_llm_client = OpenAIClient(
                 model_name=config.synthesizer_model,
@@ -91,7 +94,7 @@ class TaskProcessor:
                 ),
             )
             
-            graph_gen = GraphGen(
+            arbor_graph = ArborGraph(
                 working_dir=working_dir,
                 tokenizer_instance=tokenizer_instance,
                 synthesizer_llm_client=synthesizer_llm_client,
@@ -99,7 +102,7 @@ class TaskProcessor:
             )
             
             # Bypass async_to_sync_method wrapper by calling __wrapped__ directly
-            await graph_gen.clear.__wrapped__(graph_gen)
+            await arbor_graph.clear.__wrapped__(arbor_graph)
             
             # 处理多个文件：循环处理每个文件，累积到知识图谱中
             filepaths = task.filepaths if task.filepaths else []
@@ -116,21 +119,21 @@ class TaskProcessor:
                 # 为每个文件创建读取配置
                 file_read_config = {"input_file": filepath}
                 # 对每个文件调用 insert，知识图谱会累积所有文件的内容
-                await graph_gen.insert.__wrapped__(graph_gen, read_config=file_read_config, split_config=graphgen_config["split"])
+                await arbor_graph.insert.__wrapped__(arbor_graph, read_config=file_read_config, split_config=arborgraph_config["split"])
             
             logger.info(f"[TaskProcessor] 所有文件处理完成，共处理 {len(filepaths)} 个文件")
             
-            if graphgen_config["if_trainee_model"]:
-                await graph_gen.quiz_and_judge.__wrapped__(graph_gen, quiz_and_judge_config=graphgen_config["quiz_and_judge"])
+            if arborgraph_config["if_trainee_model"]:
+                await arbor_graph.quiz_and_judge.__wrapped__(arbor_graph, quiz_and_judge_config=arborgraph_config["quiz_and_judge"])
             
             # 根据任务类型执行不同的生成逻辑
             if task.task_type == "evaluation":
                 # 评测任务：只生成评测集
                 logger.info(f"[TaskProcessor] 评测任务：开始生成评测集")
-                await graph_gen.generate_evaluation.__wrapped__(
-                    graph_gen,
-                    partition_config=graphgen_config["partition"],
-                    evaluation_config=graphgen_config.get("evaluation", {})
+                await arbor_graph.generate_evaluation.__wrapped__(
+                    arbor_graph,
+                    partition_config=arborgraph_config["partition"],
+                    evaluation_config=arborgraph_config.get("evaluation", {})
                 )
                 logger.info(f"[TaskProcessor] 评测集生成完成")
                 
@@ -175,8 +178,8 @@ class TaskProcessor:
                     logger.info(f"[TaskProcessor] 评测集包含 {eval_count} 个评测项")
                     
                     # 获取token使用统计（与SFT任务相同）
-                    synthesizer_usage = graph_gen.synthesizer_llm_client.get_usage()
-                    trainee_usage = graph_gen.trainee_llm_client.get_usage() if graph_gen.trainee_llm_client else {"total": 0, "input": 0, "output": 0}
+                    synthesizer_usage = arbor_graph.synthesizer_llm_client.get_usage()
+                    trainee_usage = arbor_graph.trainee_llm_client.get_usage() if arbor_graph.trainee_llm_client else {"total": 0, "input": 0, "output": 0}
                     
                     total_tokens = synthesizer_usage["total"] + trainee_usage["total"]
                     total_input_tokens = synthesizer_usage["input"] + trainee_usage["input"]
@@ -234,15 +237,15 @@ class TaskProcessor:
                                     pass
                 
                 # 在生成过程中定期保存临时输出
-                await graph_gen.generate.__wrapped__(
-                    graph_gen,
-                    partition_config=graphgen_config["partition"],
-                    generate_config=graphgen_config["generate"],
+                await arbor_graph.generate.__wrapped__(
+                    arbor_graph,
+                    partition_config=arborgraph_config["partition"],
+                    generate_config=arborgraph_config["generate"],
                 )
                 logger.info(f"[TaskProcessor] 训练数据生成完成")
                 
                 # 检查生成的数据
-                output_data = graph_gen.qa_storage.data
+                output_data = arbor_graph.qa_storage.data
                 if not output_data:
                     raise ValueError("数据生成失败：未生成任何问答对。请检查 API key 是否正确，以及 LLM 服务是否可用。")
                 
@@ -257,8 +260,8 @@ class TaskProcessor:
                 logger.info(f"[TaskProcessor] 输出文件已保存到永久位置: {output_file}")
                 
                 # 获取token使用统计
-                synthesizer_usage = graph_gen.synthesizer_llm_client.get_usage()
-                trainee_usage = graph_gen.trainee_llm_client.get_usage() if graph_gen.trainee_llm_client else {"total": 0, "input": 0, "output": 0}
+                synthesizer_usage = arbor_graph.synthesizer_llm_client.get_usage()
+                trainee_usage = arbor_graph.trainee_llm_client.get_usage() if arbor_graph.trainee_llm_client else {"total": 0, "input": 0, "output": 0}
                 
                 total_tokens = synthesizer_usage["total"] + trainee_usage["total"]
                 total_input_tokens = synthesizer_usage["input"] + trainee_usage["input"]

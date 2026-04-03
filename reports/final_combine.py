@@ -1,9 +1,9 @@
 '''
 import os
 
-SECTIONS_DIR = "/home/ubuntu/graphgen_report/optimized_sections"
+SECTIONS_DIR = "/home/ubuntu/arborgraph_report/optimized_sections"
 DIAGRAMS_DIR = "diagrams"  # Relative path for Markdown links
-OUTPUT_FILE = "/home/ubuntu/graphgen_report/Optimized_GraphGen_Report.md"
+OUTPUT_FILE = "/home/ubuntu/arborgraph_report/Optimized_ArborGraph_Report.md"
 
 def main():
     """Combines optimized sections and inserts diagrams to create the final report."""
@@ -25,7 +25,7 @@ def main():
     # 1. Overall Flow Diagram in Section 3.3
     # The original ASCII art was in section 3.3. We will add the diagram there.
     placeholder_3_3 = "### 3.3 算法详细步骤"
-    diagram_3_3 = f"\n![GraphGen 整体流程图](./{DIAGRAMS_DIR}/overall_flow.png)\n"
+    diagram_3_3 = f"\n![ArborGraph 整体流程图](./{DIAGRAMS_DIR}/overall_flow.png)\n"
     final_content = final_content.replace(placeholder_3_3, placeholder_3_3 + diagram_3_3)
 
     # 2. ECE Assessment Diagram in Section 3.2.2

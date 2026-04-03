@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GraphGen 批量处理脚本
+ArborGraph 批量处理脚本
 提供简单的 Python API 来批量处理数据生成任务
 """
 
@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from graphgen_cli import GraphGenCLI
+from arborgraph_cli import ArborGraphCLI
 
 
 class BatchProcessor:
@@ -90,7 +90,7 @@ class BatchProcessor:
         }
         
         # 初始化 CLI
-        self.cli = GraphGenCLI()
+        self.cli = ArborGraphCLI()
         
         # 统计信息
         self.stats = {
@@ -150,7 +150,7 @@ class BatchProcessor:
         # 确定输出文件路径
         if output_file is None:
             base_name = file_path.stem
-            output_file = self.output_dir / f"{base_name}_graphgen_output.jsonl"
+            output_file = self.output_dir / f"{base_name}_arborgraph_output.jsonl"
         else:
             output_file = Path(output_file)
         
@@ -422,7 +422,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(
-        description="GraphGen 批量处理脚本",
+        description="ArborGraph 批量处理脚本",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例用法:

@@ -27,9 +27,9 @@ def check_syntax():
     print_section("1. Syntax Verification")
 
     files = [
-        "graphgen/models/partitioner/hierarchical_partitioner.py",
-        "graphgen/models/generator/tree_generator.py",
-        "graphgen/templates/generation/hierarchical_generation.py",
+        "arborgraph/models/partitioner/hierarchical_partitioner.py",
+        "arborgraph/models/generator/tree_generator.py",
+        "arborgraph/templates/generation/hierarchical_generation.py",
     ]
 
     import py_compile
@@ -50,11 +50,11 @@ def check_imports():
     print_section("2. Import Verification")
 
     try:
-        from graphgen.models import HierarchicalPartitioner, TreeStructureGenerator
+        from arborgraph.models import HierarchicalPartitioner, TreeStructureGenerator
         print("✓ HierarchicalPartitioner imported")
         print("✓ TreeStructureGenerator imported")
 
-        from graphgen.templates import HIERARCHICAL_GENERATION_PROMPT
+        from arborgraph.templates import HIERARCHICAL_GENERATION_PROMPT
         print("✓ HIERARCHICAL_GENERATION_PROMPT imported")
 
         # Check template structure
@@ -83,14 +83,14 @@ def check_registration():
 
     try:
         # Check partitioner registration
-        with open("graphgen/operators/partition/partition_kg.py", "r") as f:
+        with open("arborgraph/operators/partition/partition_kg.py", "r") as f:
             content = f.read()
             assert "hierarchical" in content.lower(), "Partitioner not registered"
             assert "HierarchicalPartitioner" in content, "Class not imported"
         print("✓ Partitioner registered in partition_kg.py")
 
         # Check generator registration
-        with open("graphgen/operators/generate/generate_qas.py", "r") as f:
+        with open("arborgraph/operators/generate/generate_qas.py", "r") as f:
             content = f.read()
             assert "hierarchical" in content.lower(), "Generator not registered"
             assert "TreeStructureGenerator" in content, "Class not imported"
@@ -115,7 +115,7 @@ async def test_partitioner():
     """Test HierarchicalPartitioner functionality."""
     print_section("4. Partitioner Functionality Test")
 
-    from graphgen.models import HierarchicalPartitioner
+    from arborgraph.models import HierarchicalPartitioner
 
     class MockGraph:
         async def get_all_nodes(self):
@@ -157,7 +157,7 @@ def test_generator():
     """Test TreeStructureGenerator functionality."""
     print_section("5. Generator Functionality Test")
 
-    from graphgen.models import TreeStructureGenerator
+    from arborgraph.models import TreeStructureGenerator
 
     try:
         # Test serialization

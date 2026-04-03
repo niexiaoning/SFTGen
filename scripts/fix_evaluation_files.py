@@ -18,7 +18,7 @@ from pathlib import Path
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from webui.task_manager import task_manager, TaskStatus
+from backend.utils.task_manager import task_manager, TaskStatus
 
 
 def fix_evaluation_files(target_task_id=None):

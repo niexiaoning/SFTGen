@@ -8,10 +8,10 @@ import os
 # Add project root to sys.path to ensure imports work
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from graphgen.utils.hierarchy_utils import HierarchySerializer
-from graphgen.models.generator.atomic_generator import AtomicGenerator
-from graphgen.models.generator.aggregated_generator import AggregatedGenerator
-from graphgen.models.generator.cot_generator import CoTGenerator
+from arborgraph.utils.hierarchy_utils import HierarchySerializer
+from arborgraph.models.generator.atomic_generator import AtomicGenerator, AtomicQuestionGenerator
+from arborgraph.models.generator.aggregated_generator import AggregatedGenerator
+from arborgraph.models.generator.cot_generator import CoTGenerator
 
 class TestHierarchyInjection(unittest.TestCase):
     def setUp(self):
@@ -90,6 +90,20 @@ class TestHierarchyInjection(unittest.TestCase):
         
         # And correct template parts should still be there
         self.assertIn("Question:", prompt_flat)
+
+    def test_atomic_question_generator_injection(self):
+        # Question-only generator should also inject hierarchical context.
+        question_generator = AtomicQuestionGenerator(self.mock_llm_client)
+
+        prompt = question_generator.build_prompt(self.batch_hierarchy)
+        self.assertIn("# C", prompt)
+        self.assertIn("# B", prompt)
+
+        prompt_flat = question_generator.build_prompt(self.batch_flat)
+        # Flat batch should not contain serialized hierarchy markdown headers
+        self.assertNotIn("# X", prompt_flat)
+        self.assertNotIn("# Y", prompt_flat)
+        self.assertIn("Text:", prompt_flat)
 
     def test_aggregated_generator_injection(self):
         generator = AggregatedGenerator(

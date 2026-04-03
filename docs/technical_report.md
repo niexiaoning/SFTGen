@@ -1596,7 +1596,7 @@ python -m graphgen.generate --config_file configs/aggregated_config.yaml --outpu
 
 # 2. 评估生成的QA对
 python -m graphgen.evaluate \
-    --folder cache/experiments/data/graphgen/1234567890/qa \
+    --folder cache/experiments/data/arborgraph/1234567890/qa \
     --output cache/experiments/results \
     --tokenizer cl100k_base \
     --reward "OpenAssistant/reward-model-deberta-v3-large-v2" \
@@ -1710,9 +1710,9 @@ python -m graphgen.generate --config_file configs/aggregated_config.yaml --outpu
 python -m graphgen.generate --config_file configs/multi_hop_config.yaml --output_dir cache/multi_hop
 
 # 分别评估
-python -m graphgen.evaluate --folder cache/atomic/data/graphgen/.../qa --output cache/results
-python -m graphgen.evaluate --folder cache/aggregated/data/graphgen/.../qa --output cache/results
-python -m graphgen.evaluate --folder cache/multi_hop/data/graphgen/.../qa --output cache/results
+python -m graphgen.evaluate --folder cache/atomic/data/arborgraph/.../qa --output cache/results
+python -m graphgen.evaluate --folder cache/aggregated/data/arborgraph/.../qa --output cache/results
+python -m graphgen.evaluate --folder cache/multi_hop/data/arborgraph/.../qa --output cache/results
 ```
 
 **分析**：不同生成模式各有优势，Atomic模式适合基础知识，生成数量多但复杂度低；Aggregated模式适合综合知识，MTLD和自然性较高；Multi-hop模式适合复杂推理，虽然生成数量少，但质量最高（MTLD 58.1，自然性 4.4）。

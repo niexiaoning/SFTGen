@@ -1,5 +1,5 @@
 """
-Tests for DA-ToG Phase 4: Meta-Prompt Template and DAToGGenerator.
+Tests for ArborGraph-Intent Phase 4: Meta-Prompt Template and IntentGenerator.
 """
 
 import asyncio
@@ -7,13 +7,13 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from graphgen.models.generator.datog_generator import DAToGGenerator, DIMENSION_PROMPTS
+from arborgraph.models.generator.intent_generator import IntentGenerator, DIMENSION_PROMPTS
 
 
-class TestDAToGGenerator:
+class TestIntentGenerator:
     def test_build_intent_prompt(self):
         mock_llm = AsyncMock()
-        generator = DAToGGenerator(mock_llm)
+        generator = IntentGenerator(mock_llm)
         
         intent = {
             "name": "Credit Risk",
@@ -30,7 +30,7 @@ class TestDAToGGenerator:
 
     def test_parse_response_english(self):
         mock_llm = AsyncMock()
-        generator = DAToGGenerator(mock_llm)
+        generator = IntentGenerator(mock_llm)
         
         response = "Question: What is credit risk?\nAnswer: It is the risk of default."
         results = generator.parse_response(response)
@@ -42,7 +42,7 @@ class TestDAToGGenerator:
 
     def test_parse_response_chinese(self):
         mock_llm = AsyncMock()
-        generator = DAToGGenerator(mock_llm)
+        generator = IntentGenerator(mock_llm)
         
         response = "问题：信用风险是什么？\n答案：信用风险是指借款人违约的可能性。"
         results = generator.parse_response(response)
@@ -54,7 +54,7 @@ class TestDAToGGenerator:
 
     def test_parse_response_fallback(self):
         mock_llm = AsyncMock()
-        generator = DAToGGenerator(mock_llm)
+        generator = IntentGenerator(mock_llm)
         
         response = "Only one line"
         results = generator.parse_response(response)
@@ -68,18 +68,18 @@ class TestDAToGGenerator:
         async def _run():
             mock_llm = AsyncMock()
             mock_llm.generate_answer = AsyncMock(return_value="Question: Q?\nAnswer: A.")
-            generator = DAToGGenerator(mock_llm)
+            generator = IntentGenerator(mock_llm)
             
             intent = {"name": "Topic"}
             results = await generator.generate_with_intent(intent, "Ctx", [], [])
             
             assert len(results) == 1
             key = list(results.keys())[0]
-            assert results[key]["metadata"]["generation_mode"] == "datog"
+            assert results[key]["metadata"]["generation_mode"] == "intent"
         
         asyncio.run(_run())
         
     def test_all_dimensions_have_prompts(self):
-        from graphgen.models.taxonomy.taxonomy_tree import COGNITIVE_DIMENSIONS
+        from arborgraph.models.taxonomy.taxonomy_tree import COGNITIVE_DIMENSIONS
         for dim in COGNITIVE_DIMENSIONS:
             assert dim in DIMENSION_PROMPTS

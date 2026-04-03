@@ -10,8 +10,8 @@ from typing import Dict, Any, Optional, List
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from webui.task_manager import task_manager, TaskStatus
-from webui.base import WebuiParams
+from backend.utils.task_manager import task_manager, TaskStatus
+from backend.schemas import TaskConfig
 from backend.core.task_processor import TaskProcessor
 from backend.schemas import TaskConfig
 
@@ -503,7 +503,7 @@ class TaskService:
             # 对于 DOCX 文件，使用 DOCXReader 提取内容
             if file_ext == '.docx':
                 try:
-                    from graphgen.models import DOCXReader
+                    from arborgraph.models import DOCXReader
                     reader = DOCXReader()
                     # DOCXReader.read() 返回 list[dict]，不是 Document 对象
                     documents = reader.read(file_path)

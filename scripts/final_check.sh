@@ -31,14 +31,14 @@ check_content() {
 }
 
 echo "1. 检查后端文件..."
-check_file "graphgen/models/partitioner/hierarchical_partitioner.py" "HierarchicalPartitioner 文件"
-check_file "graphgen/models/generator/tree_generator.py" "TreeStructureGenerator 文件"
-check_file "graphgen/templates/generation/hierarchical_generation.py" "Templates 文件"
+check_file "arborgraph/models/partitioner/hierarchical_partitioner.py" "HierarchicalPartitioner 文件"
+check_file "arborgraph/models/generator/tree_generator.py" "TreeStructureGenerator 文件"
+check_file "arborgraph/templates/generation/hierarchical_generation.py" "Templates 文件"
 
 echo ""
 echo "2. 检查后端注册..."
-check_content "hierarchical" "graphgen/operators/partition/partition_kg.py" "Partitioner 注册"
-check_content "hierarchical" "graphgen/operators/generate/generate_qas.py" "Generator 注册"
+check_content "hierarchical" "arborgraph/operators/partition/partition_kg.py" "Partitioner 注册"
+check_content "hierarchical" "arborgraph/operators/generate/generate_qas.py" "Generator 注册"
 check_content "qa_ratio_hierarchical" "backend/schemas.py" "Schema 配置"
 
 echo ""
@@ -70,7 +70,7 @@ echo "✅ 所有文件检查通过"
 echo "✅ Hierarchical SFT 功能已完整实现"
 echo ""
 echo "📚 快速开始:"
-echo "   1. 后端测试: conda run -n graphgen python test_hierarchical_integration.py"
+echo "   1. 后端测试: conda run -n arborgraph python test_hierarchical_integration.py"
 echo "   2. 启动前端: cd frontend && npm run dev"
 echo "   3. 访问配置: http://localhost:5173/config"
 echo "   4. 创建任务: http://localhost:5173/create-task"

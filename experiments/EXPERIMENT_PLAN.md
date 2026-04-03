@@ -1,371 +1,583 @@
-# KGE-Gen (DA-ToG) 可行性验证实验规划
+# ArborGraph 实验计划
 
-> **目标**：初步验证 DA-ToG（树 + 图 + Critic）相比 GraphGen（仅图）和 Condor（仅树）的提升，判断新论文的可行性。
->
-> **原则**：快速、低成本、能给出明确信号。不追求完美，先跑通再迭代。
+## 总览
 
----
+本实验旨在系统性验证 ArborGraph 框架在 SFT 数据生成任务中的有效性。实验分为四个阶段：
 
-## 一、实验总览
+1. **可行性验证实验**（Phase 0）：验证核心管线可正常运行并产出有效数据
+2. **数据质量对比实验**（Phase 1）：与基线方法对比生成数据的质量
+3. **下游微调效果实验**（Phase 2）：验证生成数据在下游任务中的实际效果
+4. **消融实验**（Phase 3）：分析各模块的贡献度
 
-### 1.1 对比方法
-
-| 编号 | 方法 | 数据来源 | 说明 |
-|------|------|----------|------|
-| **M1** | GraphGen | 自己生成 | 仅用 KG + 分区 + QA 生成，代码库已有 |
-| **M2** | DA-ToG (Ours) | 自己生成 | 分类树 + KG + Critic，代码库已有 |
-| **M3** | Condor | 公开数据 | 从 HuggingFace 下载 Condor-SFT-20K |
-| **M0** | Self-Instruct (可选) | 自己生成 | 直接让 LLM 从文档生成 QA，作为最弱 baseline |
-
-### 1.2 两个实验阶段
-
-| 阶段 | 内容 | 不需要微调 | 周期 |
-|------|------|-----------|------|
-| **Phase 1** | QA 数据质量直接对比 | ✅ | 3-5 天 |
-| **Phase 2** | 微调同一模型后的下游效果对比 | ❌ 需要 GPU | 5-7 天 |
+附加：**效率实验**（Phase 4）与**领域迁移实验**（Phase 5）。
 
 ---
 
-## 二、数据集设计（核心策略）
+## Phase 0：可行性验证实验
 
-### 2.0 新项目的核心差异化能力
+### 目标
+确认 ArborGraph 各核心模块可正常运行、端到端产出有效 SFT 数据。
 
-在设计数据集之前，需要明确新项目相比 GraphGen 的两层改进：
+### 0.1 基础管线测试
 
-1. **图分区层**：新增 `HierarchicalPartitioner`，能识别层级关系（`is_a`, `subclass_of`, `part_of` 等），进行横向兄弟分组和纵向链式采样，生成对比类和分类类 QA
-2. **DA-ToG 框架层**：引入 Condor 式分类树（Macro-Intent）+ 认知维度模板 + Logic-Critic 验证
+**数据准备**
+- 使用 `resources/input_examples/txt_demo.txt` 作为输入（约 2KB 纯文本）
+- 确保环境变量配置正确（`.env` 文件）
 
-因此，**层级结构越明显的文档，新项目的优势越大**。但为论文可信度，需同时包含有利和不利场景。
-
-### 2.1 数据集分组策略
-
-将实验数据集分为三组，覆盖不同层级强度的文档：
-
-| 分组 | 层级特征 | 文档类型 | 预期结果 | 论文中的作用 |
-|------|----------|----------|----------|-------------|
-| **组 A：强层级** | 文本包含显式分类体系、总-分结构 | 教科书、分类标准、技术规范 | DA-ToG >> GraphGen | 证明核心优势 |
-| **组 B：弱层级** | 文本为平铺叙事，无明显层级 | 新闻报道、研究论文、事实描述 | DA-ToG ≈ GraphGen | 证明不会更差 |
-| **组 C：混合型** | 部分内容有层级，部分为平铺 | 领域综述、维基百科词条 | DA-ToG > GraphGen | 证明真实场景有效 |
-
-论文叙事目标：
-> "在层级知识丰富的场景中，DA-ToG 显著优于 GraphGen（+X%）；在层级知识较少的场景中，DA-ToG 与 GraphGen 持平，不引入额外开销。"
-
-### 2.2 各组推荐数据源
-
-#### 组 A：强层级文档（首批实验优先用这组）
-
-| 领域 | 推荐数据源 | 层级特征 | 规模建议 |
-|------|-----------|----------|----------|
-| **计算机科学** | ACM CCS 分类下的 Wikipedia 词条 | 算法→排序算法→快速排序 | 30-50 篇 |
-| **医学** | MeSH 分类下的疾病描述文档 | 心血管疾病→冠心病→心肌梗死 | 30-50 篇 |
-| **金融** | 银行业监管文件（巴塞尔协议章节） | 风险→市场风险→利率风险（与已有 `finance/taxonomy.json` 对齐） | 30-50 篇 |
-| **生物学** | 物种分类科普文档 | 界→门→纲→目→科→属→种 | 30-50 篇 |
-
-适合的文档特征：
-- 文本本身包含"XX 分为 A、B、C 三类"等分类描述
-- 有清晰的"总-分"结构（先概述再展开）
-- 概念之间有明确的 is_a / part_of / subclass_of 关系
-- 章节嵌套明显（标准规范类）
-
-#### 组 B：弱层级文档
-
-| 领域 | 推荐数据源 | 特征 | 规模建议 |
-|------|-----------|------|----------|
-| **科技新闻** | 科技媒体文章 | 平铺叙事、事件报道 | 30-50 篇 |
-| **学术论文** | arXiv 摘要/引言 | 论证型、横向关联为主 | 30-50 篇 |
-| **历史** | 历史事件描述 | 时间线叙事、因果链 | 30-50 篇 |
-
-#### 组 C：混合型文档
-
-| 领域 | 推荐数据源 | 特征 | 规模建议 |
-|------|-----------|------|----------|
-| **综合** | 维基百科长文章 | 有目录结构但内容混合 | 30-50 篇 |
-| **教育** | 在线课程讲义 | 部分章节有分类，部分为讲解 | 30-50 篇 |
-
-### 2.3 可行性验证阶段的最小数据集
-
-首批实验只需组 A 的 **1 个领域**即可：
-
-- 选择 **金融** 或 **计算机科学**（与已有 taxonomy.json 对齐最方便）
-- 准备 30-50 篇文档，总量 30K-50K tokens
-- 用同一批文档分别跑 GraphGen 和 DA-ToG
-- 如果组 A 上没有优势 → 方法有问题，需要回去改
-- 如果组 A 上有明显优势 → 再补组 B、C 做完整论文实验
-
-### 2.4 不适合的文档类型（避免使用）
-
-| 类型 | 原因 |
-|------|------|
-| 纯叙事/新闻 | 没有层级关系，两种方法差异不大 |
-| 纯事实罗列 | 实体之间主要是横向关联，GraphGen 本来就擅长 |
-| 对话/评论 | 非知识型文本，提取不出有意义的 KG |
-| 过短文本（<200 tokens） | 构建不出有意义的知识图谱 |
-
----
-
-## 三、Phase 1：QA 数据质量对比（核心验证）
-
-### 3.1 数据准备
-
-#### 输入文档
-- **首批实验**：组 A 的 1 个领域（建议金融），30-50 篇，30K-50K tokens
-- **完整实验**：组 A + B + C 各 1 个领域，每组 30-50 篇
-- **GraphGen 和 DA-ToG 必须用同一批文档**
-
-#### 各方法生成数据
-
+**执行命令**
 ```bash
-# M1: GraphGen —— 文档 → KG → 分区(BFS/ECE) → QA
-source /workspace/.venv/bin/activate
-python graphgen_cli.py -i <input_file> -k <API_KEY> \
-    --output experiments/data/graphgen_output/
+# 测试 API 连接
+python arborgraph_cli.py -i resources/input_examples/txt_demo.txt \
+  -k $SYNTHESIZER_API_KEY --test-connection
 
-# M2: DA-ToG —— 文档 → KG + 分类树 + HierarchicalPartitioner + Critic → QA
-python scripts/run_domain.py \
-    --domain graphgen/configs/datog/finance \
-    --output experiments/data/datog_output/
+# 运行完整管线（原子模式）
+python arborgraph_cli.py -i resources/input_examples/txt_demo.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --output-data-type atomic \
+  --output-data-format Alpaca \
+  --chunk-size 512 \
+  --chunk-overlap 50 \
+  -o experiments/outputs/phase0_atomic.json
 
-# M3: Condor —— 直接下载
-# huggingface-cli download internlm/Condor-SFT-20K \
-#     --local-dir experiments/data/condor_data/
+# 运行多跳模式
+python arborgraph_cli.py -i resources/input_examples/txt_demo.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --output-data-type multi_hop \
+  --output-data-format Alpaca \
+  -o experiments/outputs/phase0_multihop.json
+
+# 运行聚合模式
+python arborgraph_cli.py -i resources/input_examples/txt_demo.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --output-data-type aggregated \
+  --output-data-format Alpaca \
+  -o experiments/outputs/phase0_aggregated.json
+
+# 运行 CoT 模式
+python arborgraph_cli.py -i resources/input_examples/txt_demo.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --output-data-type cot \
+  --output-data-format Alpaca \
+  -o experiments/outputs/phase0_cot.json
 ```
 
-#### 数据量对齐
-- 可行性验证：每种方法 **500-1000 条**
-- 正式实验：每种方法 **5K-10K 条**（每个数据集分组分别生成）
-- 论文最终版：扩大到 10K-20K
+**期望结果**
+- 每种模式输出一个 JSON/JSONL 文件，包含至少 5 条 QA 对
+- QA 对格式符合 Alpaca 格式：`{"instruction": "...", "input": "...", "output": "..."}`
+- 日志中无报错，所有步骤（读取 → 切分 → 知识图谱 → 分区 → 生成）完整执行
 
-### 3.2 自动化评测指标
+**验证脚本**
+```bash
+python -c "
+import json, sys
+for mode in ['atomic', 'multihop', 'aggregated', 'cot']:
+    path = f'experiments/outputs/phase0_{mode}.json'
+    try:
+        with open(path) as f:
+            data = json.load(f)
+        count = len(data) if isinstance(data, list) else len(data.get('items', []))
+        print(f'{mode}: {count} QA pairs generated ✓')
+        if count == 0:
+            print(f'  WARNING: {mode} generated 0 pairs')
+            sys.exit(1)
+    except FileNotFoundError:
+        print(f'{mode}: file not found ✗')
+        sys.exit(1)
+print('Phase 0.1 PASSED')
+"
+```
 
-| 维度 | 指标 | 计算方法 | 预期结果 |
-|------|------|----------|----------|
-| **多样性** | MTLD 词汇多样性 | `graphgen/models/evaluator/mtld_evaluator.py` | DA-ToG ≥ GraphGen |
-| **多样性** | 问题去重率 | 问题文本 hash 后统计唯一率 | DA-ToG 更高 |
-| **覆盖广度** | 分类树节点覆盖率 | `DAToGMetrics.calculate_coverage()` | DA-ToG >> GraphGen |
-| **覆盖广度** | 认知维度分布均匀度 | `DAToGMetrics.calculate_distribution()` | DA-ToG 更均匀 |
-| **事实深度** | 平均涉及实体数 | 统计 QA metadata 中的 graph 信息 | DA-ToG ≈ GraphGen |
-| **事实深度** | 平均推理跳数 | 子图最短路径统计 | DA-ToG ≈ GraphGen |
-| **质量下限** | Critic 通过率 | DA-ToG 的 RuleCritic 通过/拒绝比例 | DA-ToG 有数据，GraphGen 无 |
-| **长度分布** | 平均问题/答案长度 | tokenizer 统计 | 三者对比 |
+### 0.2 多格式输入测试
 
-### 3.3 人工/LLM-as-Judge 评测
+**数据准备**
+- `resources/input_examples/json_demo.json`
+- `resources/input_examples/jsonl_demo.jsonl`
+- `resources/input_examples/csv_demo.csv`
 
-从每组数据中随机抽 **50 条**，用 GPT-4 或人工打分（1-5 分）：
+**执行命令**
+```bash
+for fmt in json jsonl csv; do
+  python arborgraph_cli.py -i "resources/input_examples/${fmt}_demo.${fmt}" \
+    -k $SYNTHESIZER_API_KEY \
+    --output-data-type atomic \
+    -o "experiments/outputs/phase0_format_${fmt}.json"
+done
+```
 
-| 评分维度 | 说明 |
-|----------|------|
-| 事实准确性 | 答案是否包含事实错误或幻觉 |
-| 问题质量 | 问题是否清晰、有意义、有难度梯度 |
-| 答案完整性 | 答案是否充分回答了问题 |
-| 话题多样性 | 50 条样本是否覆盖了不同子话题 |
-| 自然度 | 语言是否自然流畅，而非"图转文"式僵硬 |
-| 训练价值 | 该 QA 对用来 SFT 微调是否有实际价值 |
+**期望结果**
+- 每种格式均能正常读取并生成 QA 对
+- 输出文件非空且格式合法
 
-### 3.4 层级感知专项指标（新增）
+### 0.3 意图驱动管线测试
 
-针对新项目的核心差异化能力，增加以下层级相关指标：
+**数据准备**
+- 使用 `arborgraph/configs/intent/finance/intent_config.yaml` 作为配置
+- 输入文本：准备一份约 5000 字的金融领域文本
 
-| 指标 | 计算方法 | 说明 |
+**执行命令**
+```bash
+python arborgraph_cli.py -i experiments/data/finance_sample.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --intent-config arborgraph/configs/intent/finance/intent_config.yaml \
+  -o experiments/outputs/phase0_intent.json
+```
+
+**期望结果**
+- 输出包含意图标注的 QA 对
+- 指标报告包含意图覆盖率信息
+
+### 0.4 批量处理测试
+
+**执行命令**
+```bash
+python arborgraph_cli.py -b \
+  resources/input_examples/txt_demo.txt \
+  resources/input_examples/json_demo.json \
+  -k $SYNTHESIZER_API_KEY \
+  --output-data-type atomic
+```
+
+**期望结果**
+- 两个文件均成功处理
+- 批量日志文件生成，包含处理统计
+
+---
+
+## Phase 1：数据质量对比实验
+
+### 目标
+对比 ArborGraph 与基线方法生成数据的质量。
+
+### 1.0 数据集准备
+
+准备 3 组不同特征的数据集：
+
+| 数据集 | 特征 | 大小 | 来源 |
+|--------|------|------|------|
+| D1-强层级 | 有明确层级结构（如教材、技术文档） | 10-20KB | Wikipedia 技术文章 |
+| D2-弱层级 | 无明显层级结构（如新闻、对话） | 10-20KB | 新闻语料 |
+| D3-混合 | 混合多种文体 | 10-20KB | 综合语料 |
+
+**数据准备命令**
+```bash
+mkdir -p experiments/data/{d1_strong_hierarchy,d2_weak_hierarchy,d3_mixed}
+
+# D1：从 Wikipedia 获取技术文章（手动准备）
+# 将内容保存至 experiments/data/d1_strong_hierarchy/input.txt
+
+# D2：准备新闻语料
+# 将内容保存至 experiments/data/d2_weak_hierarchy/input.txt
+
+# D3：混合语料
+# 将内容保存至 experiments/data/d3_mixed/input.txt
+```
+
+### 1.1 基线方法实现
+
+**方法 A：Self-Instruct（基线）**
+```bash
+# 使用纯 LLM 直接生成 QA 对（不经过知识图谱）
+python experiments/baselines/self_instruct.py \
+  --input experiments/data/d1_strong_hierarchy/input.txt \
+  --model $SYNTHESIZER_MODEL \
+  --api-key $SYNTHESIZER_API_KEY \
+  --num-samples 100 \
+  --output experiments/outputs/phase1/self_instruct_d1.json
+```
+
+**方法 B：ArborGraph（本项目）**
+```bash
+for dataset in d1_strong_hierarchy d2_weak_hierarchy d3_mixed; do
+  for mode in atomic aggregated multi_hop cot; do
+    python arborgraph_cli.py \
+      -i "experiments/data/${dataset}/input.txt" \
+      -k $SYNTHESIZER_API_KEY \
+      --output-data-type $mode \
+      --output-data-format Alpaca \
+      --chunk-size 1024 \
+      --chunk-overlap 100 \
+      -o "experiments/outputs/phase1/arborgraph_${dataset}_${mode}.json"
+  done
+done
+```
+
+**方法 C：ArborGraph + 意图驱动**
+```bash
+for dataset in d1_strong_hierarchy d2_weak_hierarchy d3_mixed; do
+  python arborgraph_cli.py \
+    -i "experiments/data/${dataset}/input.txt" \
+    -k $SYNTHESIZER_API_KEY \
+    --intent-config arborgraph/configs/intent_config.yaml \
+    -o "experiments/outputs/phase1/arborgraph_intent_${dataset}.json"
+done
+```
+
+### 1.2 自动化评测指标
+
+对所有生成的数据集计算以下指标：
+
+| 指标 | 说明 | 工具/命令 |
+|------|------|-----------|
+| MTLD | 词汇多样性（越高越好） | `scripts/coverage_metrics.py` |
+| UniEval | 语义质量（越高越好） | `arborgraph/models/evaluator/uni_evaluator.py` |
+| BLEU-Self | 自相似度（越低越好） | 自定义脚本 |
+| 知识覆盖率 | 知识图谱节点覆盖比例 | `scripts/coverage_metrics.py` |
+| 长度分布 | 回答长度的统计分布 | `arborgraph/models/evaluator/length_evaluator.py` |
+
+**执行命令**
+```bash
+python experiments/eval/run_metrics.py \
+  --input-dir experiments/outputs/phase1/ \
+  --output experiments/results/phase1_metrics.json \
+  --metrics mtld,length,coverage,self_bleu
+```
+
+**期望结果格式**
+```json
+{
+  "method": "arborgraph_atomic",
+  "dataset": "d1_strong_hierarchy",
+  "metrics": {
+    "mtld": 85.3,
+    "avg_answer_length": 128.5,
+    "coverage_ratio": 0.82,
+    "self_bleu": 0.15,
+    "unique_entities_covered": 45
+  }
+}
+```
+
+### 1.3 LLM-as-Judge 评测
+
+使用 GPT-4 级别模型作为评判者，评估生成质量。
+
+**评测维度**
+- 事实准确性（1-5 分）
+- 问题质量（1-5 分）
+- 回答完整性（1-5 分）
+- 知识深度（1-5 分）
+
+**执行命令**
+```bash
+python experiments/eval/llm_judge.py \
+  --input-dir experiments/outputs/phase1/ \
+  --judge-model gpt-4o \
+  --judge-api-key $JUDGE_API_KEY \
+  --sample-size 50 \
+  --output experiments/results/phase1_judge.json
+```
+
+**期望结果**
+- 每种方法每个数据集的各维度平均分数
+- ArborGraph 在事实准确性和知识深度上应显著优于 Self-Instruct
+
+### 1.4 层级感知指标
+
+针对强层级数据集 D1，额外评测：
+- 层级覆盖深度
+- 父子关系保持率
+- 跨层级推理能力
+
+```bash
+python experiments/eval/hierarchy_metrics.py \
+  --input experiments/outputs/phase1/arborgraph_d1_strong_hierarchy_atomic.json \
+  --source experiments/data/d1_strong_hierarchy/input.txt \
+  --output experiments/results/phase1_hierarchy.json
+```
+
+---
+
+## Phase 2：下游微调效果实验
+
+### 目标
+验证 ArborGraph 生成的 SFT 数据在下游微调任务中的实际效果。
+
+### 2.1 微调数据准备
+
+将 Phase 1 中各方法生成的数据转换为微调格式。
+
+**执行命令**
+```bash
+# 合并各模式生成的数据
+python experiments/scripts/merge_datasets.py \
+  --input-dir experiments/outputs/phase1/ \
+  --method arborgraph \
+  --output experiments/finetune_data/arborgraph_train.json
+
+python experiments/scripts/merge_datasets.py \
+  --input-dir experiments/outputs/phase1/ \
+  --method self_instruct \
+  --output experiments/finetune_data/self_instruct_train.json
+```
+
+### 2.2 模型微调
+
+使用 Qwen2.5-7B-Instruct 作为基础模型，分别用不同数据集微调。
+
+**微调配置**
+- 基础模型：Qwen/Qwen2.5-7B-Instruct
+- 微调方法：LoRA (rank=16, alpha=32)
+- 学习率：2e-5
+- Epoch：3
+- 批量大小：4
+- 最大长度：2048
+
+**执行命令**（使用 LLaMA-Factory 或类似工具）
+```bash
+# 使用 ArborGraph 数据微调
+python -m llama_factory.train \
+  --model_name_or_path Qwen/Qwen2.5-7B-Instruct \
+  --dataset experiments/finetune_data/arborgraph_train.json \
+  --output_dir experiments/models/arborgraph_ft \
+  --lora_rank 16 \
+  --learning_rate 2e-5 \
+  --num_train_epochs 3 \
+  --per_device_train_batch_size 4
+
+# 使用 Self-Instruct 数据微调
+python -m llama_factory.train \
+  --model_name_or_path Qwen/Qwen2.5-7B-Instruct \
+  --dataset experiments/finetune_data/self_instruct_train.json \
+  --output_dir experiments/models/self_instruct_ft \
+  --lora_rank 16 \
+  --learning_rate 2e-5 \
+  --num_train_epochs 3 \
+  --per_device_train_batch_size 4
+```
+
+### 2.3 下游评测
+
+在多个 Benchmark 上评测微调后的模型：
+
+| Benchmark | 评测内容 | 评测命令 |
+|-----------|----------|----------|
+| MMLU | 多学科知识 | `lm_eval --model hf --model_args pretrained=experiments/models/arborgraph_ft --tasks mmlu --batch_size 8` |
+| C-Eval | 中文知识 | `lm_eval --model hf --model_args pretrained=experiments/models/arborgraph_ft --tasks ceval --batch_size 8` |
+| AlpacaEval | 指令跟随 | `alpaca_eval --model_outputs experiments/eval_outputs/arborgraph_alpaca.json` |
+| MT-Bench | 多轮对话 | `python fastchat/llm_judge/gen_model_answer.py --model-path experiments/models/arborgraph_ft` |
+
+**期望结果**
+- ArborGraph 微调的模型在领域相关 Benchmark 上应优于 Self-Instruct 微调的模型
+- 特别是在需要事实性知识的任务上，差距应更明显
+
+### 2.4 结果汇总
+
+```bash
+python experiments/eval/summarize_results.py \
+  --phase1 experiments/results/phase1_metrics.json \
+  --phase2-dir experiments/results/phase2/ \
+  --output experiments/results/final_summary.json
+```
+
+**期望输出格式**
+| 方法 | MMLU | C-Eval | AlpacaEval | MT-Bench |
+|------|------|--------|------------|----------|
+| Base Model | - | - | - | - |
+| + Self-Instruct | - | - | - | - |
+| + ArborGraph (atomic) | - | - | - | - |
+| + ArborGraph (all modes) | - | - | - | - |
+| + ArborGraph + Intent | - | - | - | - |
+
+---
+
+## Phase 3：消融实验
+
+### 目标
+分析 ArborGraph 各核心模块的贡献度。
+
+### 3.1 模块消融矩阵
+
+| 实验编号 | 知识图谱 | ECE 评估 | 多模式生成 | 意图驱动 | 层级提取 |
+|----------|----------|----------|------------|----------|----------|
+| A0 (完整) | ✓ | ✓ | ✓ | ✓ | ✓ |
+| A1 | ✗ | - | ✓ | ✗ | ✗ |
+| A2 | ✓ | ✗ | ✓ | ✗ | ✗ |
+| A3 | ✓ | ✓ | 仅atomic | ✗ | ✗ |
+| A4 | ✓ | ✓ | ✓ | ✗ | ✗ |
+| A5 | ✓ | ✓ | ✓ | ✓ | ✗ |
+
+**执行命令**
+
+```bash
+# A1: 无知识图谱（直接文本生成）
+python experiments/ablation/run_without_kg.py \
+  -i experiments/data/d1_strong_hierarchy/input.txt \
+  -o experiments/outputs/ablation/a1_no_kg.json
+
+# A2: 无 ECE（随机采样替代）
+python arborgraph_cli.py -i experiments/data/d1_strong_hierarchy/input.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --edge-sampling random \
+  --output-data-type all \
+  -o experiments/outputs/ablation/a2_no_ece.json
+
+# A3: 仅 atomic 模式
+python arborgraph_cli.py -i experiments/data/d1_strong_hierarchy/input.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --output-data-type atomic \
+  -o experiments/outputs/ablation/a3_atomic_only.json
+
+# A4: 无意图驱动（标准管线）
+python arborgraph_cli.py -i experiments/data/d1_strong_hierarchy/input.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --output-data-type all \
+  -o experiments/outputs/ablation/a4_no_intent.json
+
+# A5: 无层级提取
+python arborgraph_cli.py -i experiments/data/d1_strong_hierarchy/input.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --output-data-type atomic,aggregated,multi_hop,cot \
+  -o experiments/outputs/ablation/a5_no_hierarchy.json
+```
+
+### 3.2 消融评测
+
+对每个消融实验计算相同的质量指标，并与完整版本 A0 对比。
+
+```bash
+python experiments/eval/run_metrics.py \
+  --input-dir experiments/outputs/ablation/ \
+  --output experiments/results/ablation_metrics.json \
+  --metrics mtld,length,coverage,self_bleu
+```
+
+**期望结果**
+- A0 (完整版) 应在综合指标上最优
+- 知识图谱模块 (A1 vs A4) 贡献最大
+- ECE 评估 (A2 vs A4) 对知识覆盖率提升显著
+- 多模式生成 (A3 vs A4) 提升数据多样性
+
+---
+
+## Phase 4：效率实验
+
+### 目标
+评估 ArborGraph 的批量优化策略对效率的影响。
+
+### 4.1 Token 使用效率
+
+```bash
+# 无优化
+python arborgraph_cli.py -i experiments/data/d1_strong_hierarchy/input.txt \
+  -k $SYNTHESIZER_API_KEY \
+  --output-data-type all \
+  --chunk-size 1024 \
+  -o experiments/outputs/efficiency/no_opt.json 2>&1 | tee experiments/logs/no_opt.log
+
+# 启用 Prompt 缓存
+# (默认已启用，通过日志对比 token 使用量)
+```
+
+**评测指标**
+- 总 Token 消耗量
+- 生成每条 QA 的平均 Token 消耗
+- 端到端时间
+- API 调用次数
+
+### 4.2 不同 chunk_size 的影响
+
+```bash
+for chunk_size in 256 512 1024 2048; do
+  python arborgraph_cli.py -i experiments/data/d1_strong_hierarchy/input.txt \
+    -k $SYNTHESIZER_API_KEY \
+    --chunk-size $chunk_size \
+    --output-data-type atomic \
+    -o "experiments/outputs/efficiency/chunk_${chunk_size}.json"
+done
+```
+
+**期望结果**
+- chunk_size 影响知识图谱粒度和 QA 质量
+- 存在一个最优 chunk_size 平衡点
+
+---
+
+## Phase 5：领域迁移实验
+
+### 目标
+验证 ArborGraph 在不同领域的适用性。
+
+### 5.1 领域数据集
+
+| 领域 | 数据来源 | 大小 |
 |------|----------|------|
-| **层级关系识别率** | 统计 KG 中被标记为 is_a/subclass_of/part_of 的边占总边数的比例 | 越高说明文档层级越丰富 |
-| **兄弟分组社区数** | `HierarchicalPartitioner` 输出中 `type=sibling_group` 的社区数量 | DA-ToG 独有，GraphGen 为 0 |
-| **纵向链式社区数** | `HierarchicalPartitioner` 输出中 `type=vertical_chain` 的社区数量 | DA-ToG 独有，GraphGen 为 0 |
-| **对比类 QA 占比** | 人工/LLM 标注生成的 QA 中包含"对比""区别""不同"等对比性问题的比例 | DA-ToG 应更高 |
-| **分类类 QA 占比** | 人工/LLM 标注生成的 QA 中包含"属于""分为""类型"等分类性问题的比例 | DA-ToG 应更高 |
+| 金融 | 金融法规/报告 | 10KB |
+| 医疗 | 医学教材摘要 | 10KB |
+| 法律 | 法律条文 | 10KB |
+| 技术 | 技术文档 | 10KB |
 
-这组指标按数据集分组（A/B/C）分别统计，预期：
-- **组 A（强层级）**：DA-ToG 层级指标远高于 GraphGen
-- **组 B（弱层级）**：两者层级指标都低，差异不大
-- **组 C（混合）**：DA-ToG 层级指标中等偏高
+### 5.2 跨领域生成
 
-### 3.5 GraphGen vs DA-ToG 核心对比表（模板）
+```bash
+for domain in finance medical legal tech; do
+  python arborgraph_cli.py \
+    -i "experiments/data/domains/${domain}/input.txt" \
+    -k $SYNTHESIZER_API_KEY \
+    --output-data-type all \
+    -o "experiments/outputs/domains/${domain}_output.json"
+done
+```
 
-按数据集分组分别填写，以下为单组模板：
+### 5.3 领域适应性评测
 
-| 指标 | GraphGen (M1) | DA-ToG (M2) | 提升 |
-|------|---------------|-------------|------|
-| MTLD ↑ | | | |
-| 问题唯一率 ↑ | | | |
-| 分类树覆盖率 ↑ | N/A | | |
-| 认知维度均匀度 ↑ | N/A | | |
-| 平均实体数 | | | |
-| 平均跳数 | | | |
-| Critic 通过率 | N/A | | |
-| 兄弟分组社区数 | 0 | | |
-| 纵向链式社区数 | 0 | | |
-| 对比类 QA 占比 ↑ | | | |
-| 分类类 QA 占比 ↑ | | | |
-| 人工评分均值 ↑ | | | |
+使用 LLM-as-Judge 评估各领域生成数据的专业性和准确性。
 
-论文中应展示三组（A/B/C）各一张表，或合并为一张大表。
-
-### 3.6 和 Condor 的对比策略
-
-Condor 未开源代码，对比方式：
-
-1. **数据层面**：下载 Condor-SFT-20K，用同样的自动化指标（MTLD、长度分布、去重率）直接和 DA-ToG 生成的数据对比
-2. **效果层面**：留到 Phase 2，用微调后的模型在 Benchmark 上对比
-3. **论文写法**：如有指标无法直接对比，引用 Condor 论文中的报告数字，注明"Results cited from original paper"
+```bash
+python experiments/eval/domain_judge.py \
+  --input-dir experiments/outputs/domains/ \
+  --judge-model gpt-4o \
+  --output experiments/results/domain_metrics.json
+```
 
 ---
 
-## 四、Phase 2：下游微调效果对比（需 GPU）
-
-### 4.1 实验设置
-
-| 配置项 | 统一设置 |
-|--------|----------|
-| **Base 模型** | Qwen-2.5-7B（或 Llama-3-8B） |
-| **微调工具** | LLaMA Factory |
-| **SFT 数据量** | 每组统一 10K-20K 条 |
-| **微调超参** | lr=2e-5, epochs=3, batch_size=4, max_len=2048（统一） |
-| **微调方式** | LoRA (rank=64) 或 Full Fine-tuning |
-
-### 4.2 微调数据来源
-
-| 组别 | 数据 |
-|------|------|
-| M0 (可选) | Self-Instruct 生成的 QA |
-| M1 | GraphGen 生成的 QA |
-| M2 | DA-ToG 生成的 QA |
-| M3 | Condor-SFT-20K（抽取等量子集） |
-
-### 4.3 评测 Benchmark
-
-| 类型 | Benchmark | 评测什么 |
-|------|-----------|----------|
-| 通用知识 | MMLU / C-Eval | SFT 后通用能力是否保持或提升 |
-| 对话质量 | AlpacaEval / MT-Bench | 人类偏好评分 |
-| 领域知识 | FinEval / 自建 100 题 | 垂直领域知识是否增强 |
-| 推理能力 | GSM8K / ARC (可选) | 推理能力是否受益 |
-
-### 4.4 下游效果对比表（模板）
-
-| Benchmark | Base (M0) | GraphGen (M1) | DA-ToG (M2) | Condor (M3) |
-|-----------|-----------|----------------|-------------|-------------|
-| C-Eval | | | | |
-| MMLU | | | | |
-| AlpacaEval | | | | |
-| FinEval | | | | |
-| 自建测试集 | | | | |
-
----
-
-## 五、消融实验（Phase 1 确认可行后再做）
-
-| 消融组 | 设置 | 验证什么 |
-|--------|------|----------|
-| DA-ToG w/o Critic | 去掉 Logic-Critic 层 | Critic 的价值 |
-| DA-ToG w/o Tree | 去掉 Macro-Intent 层 | 分类树的价值 |
-| DA-ToG w/o Graph | 去掉 Micro-Fact 层 | 图谱的价值 |
-| DA-ToG w/o ECE | 随机采样替换 ECE | 知识盲点识别的价值 |
-| DA-ToG w/o HierPartitioner | 用 BFS 替换 HierarchicalPartitioner | 层级分区的价值（在组 A 上做） |
-
-消融实验建议**在组 A（强层级）文档上做**，因为层级相关模块在这类数据上效果最明显，消融后的下降也最显著。
-
----
-
-## 六、关键决策记录
-
-### 6.1 关于 Condor 的对比
-
-- **不需要**用和 Condor 完全相同的数据集和模型
-- **需要**在自己的实验中统一 Base 模型和微调超参
-- Condor-SFT-20K 可直接用于微调对比
-- 如需更严格对比，可用 Condor README 中的 Prompt 模板实现简化版
-
-### 6.2 关于合成器模型
-
-- GraphGen 和 DA-ToG **必须用同一个 LLM**（如 Qwen-2.5-72B 或 GPT-4）
-- 在 `.env` 中配置 `SYNTHESIZER_MODEL`、`SYNTHESIZER_BASE_URL`、`SYNTHESIZER_API_KEY`
-
-### 6.3 关于数据集选择的原则
-
-- **不能只选有利数据集**：如果只展示组 A（强层级），审稿人会质疑"是否挑数据了"
-- **分组对比是最佳策略**：同时展示强层级/弱层级/混合三组，证明方法的鲁棒性
-- **可行性验证阶段先只用组 A**：用最有利的场景快速验证方法是否有效
-- **正式实验再补齐组 B、C**：确认可行后再投入资源做完整对比
-- **论文中应报告文档的层级特征**：如层级关系占比、平均层级深度，让读者理解各组差异
-
-### 6.4 关于代码库中评测工具的现状
-
-| 工具 | 状态 | 说明 |
-|------|------|------|
-| `graphgen/evaluate.py` 评测主脚本 | ✅ 已实现 | 一键跑 MTLD + UniEval + 奖励模型，需要 GPU |
-| `MTLDEvaluator` | ✅ 已实现 | 纯 CPU |
-| `UniEvaluator` | ✅ 已实现 | 需要 GPU + 模型 `MingZhong/unieval-sum` |
-| `RewardEvaluator` | ✅ 已实现 | 需要 GPU + 模型 `OpenAssistant/reward-model-deberta-v3-large-v2` |
-| `LengthEvaluator` | ✅ 已实现 | 纯 CPU |
-| `scripts/coverage_metrics.py` | ✅ 已实现 | 长尾覆盖率、复杂关系覆盖率、平均跳数，纯 CPU |
-| `DAToGMetrics` | ✅ 已实现 | 分类树覆盖率、认知维度分布 |
-| 三个 Baseline（直接生成/模板填充/检索增强） | ❌ 未实现 | 论文注明"需单独实现" |
-| `EXPERIMENT_SCRIPTS.md` | ❌ 不存在 | 论文引用但从未创建 |
-| 论文中的 300 篇文档数据集 | ❌ 不存在 | 需自行准备 |
-
-### 6.5 变量控制清单
-
-| 变量 | 是否需要统一 | 说明 |
-|------|-------------|------|
-| 输入文档 | ✅ GraphGen 和 DA-ToG 之间 | Condor 不依赖外部文档，无需统一 |
-| 合成器 LLM | ✅ 所有自己跑的方法 | Condor 用的是他们自己的模型 |
-| 生成数据量 | ✅ 所有方法 | 对齐到同一量级 |
-| 被微调的 Base 模型 | ✅ 所有方法 | 必须完全一致 |
-| 微调超参 | ✅ 所有方法 | lr, epochs, batch_size 等 |
-| 评测 Benchmark | ✅ 所有方法 | 同一套测试题 |
-
----
-
-## 七、目录结构
+## 实验目录结构
 
 ```
 experiments/
-├── EXPERIMENT_PLAN.md              ← 本文件（实验规划）
-├── data/
-│   ├── input_docs/                 ← 输入文档
-│   │   ├── group_a_hierarchical/   ← 组 A：强层级文档
-│   │   ├── group_b_flat/           ← 组 B：弱层级文档
-│   │   └── group_c_mixed/          ← 组 C：混合型文档
-│   ├── graphgen_output/            ← GraphGen 生成的 QA 数据
-│   │   ├── group_a/
-│   │   ├── group_b/
-│   │   └── group_c/
-│   ├── datog_output/               ← DA-ToG 生成的 QA 数据
-│   │   ├── group_a/
-│   │   ├── group_b/
-│   │   └── group_c/
-│   └── condor_data/                ← Condor-SFT-20K 下载数据
-├── phase1_data_quality/            ← Phase 1 数据质量对比结果
-├── phase2_downstream/              ← Phase 2 微调效果对比结果
-├── eval_results/                   ← 评测结果汇总
-└── scripts/                        ← 实验脚本
+├── EXPERIMENT_PLAN.md           # 本文件
+├── RELATED_WORK_AND_MOTIVATION.md
+├── baselines/                   # 基线方法实现
+│   └── self_instruct.py
+├── data/                        # 实验数据
+│   ├── d1_strong_hierarchy/
+│   ├── d2_weak_hierarchy/
+│   ├── d3_mixed/
+│   └── domains/
+├── eval/                        # 评测脚本
+│   ├── run_metrics.py
+│   ├── llm_judge.py
+│   ├── hierarchy_metrics.py
+│   ├── domain_judge.py
+│   └── summarize_results.py
+├── scripts/                     # 辅助脚本
+│   └── merge_datasets.py
+├── ablation/                    # 消融实验脚本
+│   └── run_without_kg.py
+├── outputs/                     # 实验输出
+│   ├── phase0/
+│   ├── phase1/
+│   ├── ablation/
+│   ├── efficiency/
+│   └── domains/
+├── results/                     # 结果汇总
+│   ├── phase1_metrics.json
+│   ├── phase1_judge.json
+│   ├── ablation_metrics.json
+│   └── final_summary.json
+└── logs/                        # 实验日志
 ```
 
----
+## 执行优先级
 
-## 八、执行优先级
+1. **最高优先级**：Phase 0（可行性验证） → 确保系统可运行
+2. **高优先级**：Phase 1.1-1.2（数据质量自动评测） → 量化质量差异
+3. **中优先级**：Phase 3（消融实验） → 理解各模块贡献
+4. **低优先级**：Phase 1.3（LLM-as-Judge）, Phase 2（下游微调）, Phase 4-5 → 深度验证
 
-```
-Week 1 (最高优先级 — 可行性验证):
-  ├── [1] 准备组 A（强层级）文档（1 个领域，30-50 篇）
-  ├── [2] 用 GraphGen 在组 A 上生成 500-1000 条 QA
-  ├── [3] 用 DA-ToG 在组 A 上生成 500-1000 条 QA
-  ├── [4] Phase 1 自动化指标对比（MTLD + 覆盖度 + 层级指标）
-  └── [5] 得到第一张对比表 → 判断可行性信号
+## 注意事项
 
-Week 2 (可行性确认后 — 补齐数据集):
-  ├── [6] 准备组 B（弱层级）和组 C（混合型）文档
-  ├── [7] 三组数据集分别跑 GraphGen 和 DA-ToG
-  ├── [8] 下载 Condor-SFT-20K
-  ├── [9] Phase 1 人工/LLM-Judge 评测（每组各抽 50 条）
-  └── [10] 完整的三方 × 三组对比表
-
-Week 3-4 (需 GPU):
-  ├── [11] LLaMA Factory 微调 × 3-4 组
-  ├── [12] Benchmark 评测
-  └── [13] Phase 2 下游效果对比表
-
-Week 5+ (正式论文实验):
-  ├── [14] 消融实验（在组 A 上做）
-  ├── [15] 扩大数据规模重跑（每组 5K-10K）
-  └── [16] 论文撰写
-```
+1. 所有实验使用相同的 API Key 和模型配置，确保公平对比
+2. 每次实验记录 Token 消耗，用于成本分析
+3. 对于随机性实验，设置固定 seed 并报告 3 次运行的均值和标准差
+4. 所有中间结果和日志保留，便于问题排查和结果复现

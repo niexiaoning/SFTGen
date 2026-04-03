@@ -91,6 +91,55 @@
           </el-descriptions-item>
         </el-descriptions>
 
+        <!-- 任务日志 -->
+        <el-card shadow="never" style="margin-top: 20px">
+          <template #header>
+            <div class="log-header">
+              <span>任务日志</span>
+              <div class="log-actions">
+                <el-switch
+                  v-model="logAutoRefresh"
+                  :disabled="!task?.log_file"
+                  active-text="自动刷新"
+                  inactive-text="暂停"
+                />
+                <el-switch
+                  v-model="logAutoScroll"
+                  active-text="自动滚动"
+                  inactive-text="手动"
+                />
+                <el-button size="small" :disabled="!task?.log_file" @click="refreshLog(true)">
+                  刷新
+                </el-button>
+                <el-button size="small" :disabled="!task?.log_file" @click="clearLogView">
+                  清空视图
+                </el-button>
+                <el-button size="small" :disabled="!task?.log_file" @click="copyLog">
+                  复制
+                </el-button>
+              </div>
+            </div>
+          </template>
+
+          <div v-if="!task.log_file" class="log-empty">
+            任务尚未产生日志文件（未启动或旧任务未记录 log_file）。
+          </div>
+          <div v-else class="log-body">
+            <div class="log-meta">
+              <span class="log-path">日志文件：{{ task.log_file }}</span>
+              <span class="log-meta-item">已显示：{{ logLineCount }} 行</span>
+            </div>
+            <el-input
+              ref="logInputRef"
+              v-model="logContent"
+              type="textarea"
+              :rows="16"
+              readonly
+              class="log-textarea"
+            />
+          </div>
+        </el-card>
+
         <!-- 文件管理 -->
         <el-card shadow="never" style="margin-top: 20px">
           <template #header>
@@ -421,7 +470,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useTaskStore } from '@/stores/task'
 import { useConfigStore } from '@/stores/config'
@@ -443,8 +492,20 @@ const authStore = useAuthStore()
 const loading = ref(false)
 const task = ref<TaskInfo | null>(null)
 let refreshTimer: number | null = null
+let logTimer: number | null = null
 
 const taskId = route.params.id as string
+
+// 日志面板相关
+const logContent = ref('')
+const logOffset = ref(0)
+const logAutoRefresh = ref(true)
+const logAutoScroll = ref(true)
+const logInputRef = ref()
+const logLineCount = computed(() => {
+  if (!logContent.value) return 0
+  return logContent.value.split('\n').length
+})
 
 // 文件上传相关
 const showUploadDialog = ref(false)
@@ -474,16 +535,122 @@ const evaluationStats = ref<any>({
   generated_at: null
 })
 
+const stopTaskRefreshTimer = () => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
+
+const startTaskRefreshTimer = () => {
+  if (refreshTimer) return
+  if (task.value?.status !== 'processing') return
+  refreshTimer = window.setInterval(() => {
+    fetchTaskDetail(true)
+  }, 3000)
+}
+
+const stopLogTimer = () => {
+  if (logTimer) {
+    clearInterval(logTimer)
+    logTimer = null
+  }
+}
+
+const startLogTimer = () => {
+  if (logTimer) return
+  if (task.value?.status !== 'processing') return
+  if (!task.value?.log_file) return
+  if (!logAutoRefresh.value) return
+  logTimer = window.setInterval(() => {
+    refreshLog(false)
+  }, 2000)
+}
+
+/** 根据任务状态启停轮询：仅 processing 时拉任务详情与日志；终态时停表并补拉一次完整日志 */
+const syncPollingTimers = async (prevStatus: string | undefined) => {
+  const status = task.value?.status
+  const terminal = status === 'completed' || status === 'failed'
+
+  if (status === 'processing') {
+    startTaskRefreshTimer()
+    if (logAutoRefresh.value && task.value?.log_file) {
+      startLogTimer()
+    } else {
+      stopLogTimer()
+    }
+  } else {
+    stopTaskRefreshTimer()
+    stopLogTimer()
+    if (prevStatus === 'processing' && terminal) {
+      await refreshLog(true)
+    }
+  }
+}
+
 // 获取任务详情
-const fetchTaskDetail = async () => {
-  loading.value = true
+const fetchTaskDetail = async (silent: boolean = false) => {
+  if (!silent) loading.value = true
+  const prevStatus = task.value?.status
   try {
     const data = await taskStore.fetchTask(taskId)
     if (data) {
       task.value = data
     }
   } finally {
-    loading.value = false
+    if (!silent) loading.value = false
+  }
+  await syncPollingTimers(prevStatus)
+}
+
+watch(logAutoRefresh, () => {
+  if (task.value?.status === 'processing') {
+    if (logAutoRefresh.value && task.value?.log_file) {
+      startLogTimer()
+    } else {
+      stopLogTimer()
+    }
+  }
+})
+
+const refreshLog = async (forceFull: boolean = false) => {
+  if (!task.value?.log_file) return
+  try {
+    const offset = forceFull ? 0 : logOffset.value
+    const resp = await api.getTaskLogs(task.value.task_id, offset, 400)
+    if (!resp.success || !resp.data) return
+    const payload = resp.data as any
+    const content = payload.content || ''
+    const nextOffset = payload.next_offset ?? offset
+
+    if (forceFull) {
+      logContent.value = content
+    } else if (content) {
+      logContent.value += (logContent.value && !logContent.value.endsWith('\n') ? '\n' : '') + content
+    }
+    logOffset.value = nextOffset
+
+    if (logAutoScroll.value) {
+      await nextTick()
+      const el = (logInputRef.value as any)?.textarea as HTMLTextAreaElement | undefined
+      if (el) el.scrollTop = el.scrollHeight
+    }
+  } catch {
+    // 静默：避免轮询时刷屏
+  }
+}
+
+const clearLogView = () => {
+  logContent.value = ''
+  logOffset.value = 0
+}
+
+const copyLog = async () => {
+  try {
+    await navigator.clipboard.writeText(logContent.value || '')
+    ElMessage.success('日志已复制到剪贴板')
+  } catch {
+    ElMessage.error('复制失败')
   }
 }
 
@@ -813,22 +980,17 @@ const handleDownloadEvaluation = async () => {
 
 onMounted(async () => {
   await fetchTaskDetail()
+  // 初次拉取日志（若有 log_file）；终态下由 syncPollingTimers 也会补拉一次
+  await refreshLog(true)
   // 只有评测任务才加载评测数据
   if (task.value?.task_type === 'evaluation') {
     await loadEvaluationData()
   }
-  // 如果任务正在处理中，启动自动刷新
-  if (task.value?.status === 'processing') {
-    refreshTimer = window.setInterval(() => {
-      fetchTaskDetail()
-    }, 3000)
-  }
 })
 
 onUnmounted(() => {
-  if (refreshTimer) {
-    clearInterval(refreshTimer)
-  }
+  stopTaskRefreshTimer()
+  stopLogTimer()
 })
 </script>
 
@@ -853,6 +1015,47 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.log-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.log-empty {
+  color: #909399;
+  font-size: 13px;
+}
+
+.log-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.log-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #909399;
+}
+
+.log-path {
+  word-break: break-all;
+}
+
+.log-textarea :deep(textarea) {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
 }
 
 .upload-demo {

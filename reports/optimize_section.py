@@ -33,8 +33,8 @@ def optimize_text(text, section_name):
     return response.choices[0].message.content
 
 if __name__ == "__main__":
-    sections_dir = "/home/ubuntu/graphgen_report/sections"
-    optimized_dir = "/home/ubuntu/graphgen_report/optimized_sections"
+    sections_dir = "/home/ubuntu/arborgraph_report/sections"
+    optimized_dir = "/home/ubuntu/arborgraph_report/optimized_sections"
 
     # Get the list of section files and sort them
     section_files = sorted([f for f in os.listdir(sections_dir) if f.endswith(".txt")])

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-GraphGen 并行批量处理脚本（增强版）
+ArborGraph 并行批量处理脚本（增强版）
 支持多模型并行处理和 batch size 配置
 """
 
@@ -481,7 +481,7 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(
-        description="GraphGen 并行批量处理脚本 - 支持多模型并行处理",
+        description="ArborGraph 并行批量处理脚本 - 支持多模型并行处理",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例用法:

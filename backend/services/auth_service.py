@@ -37,7 +37,7 @@ class AuthService:
                     "user_id": str(uuid.uuid4()),
                     "username": "admin",
                     "password_hash": self._hash_password("admin123"),
-                    "email": "admin@graphgen.com",
+                    "email": "admin@arborgraph.com",
                     "role": UserRole.ADMIN,
                     "is_active": True,
                     "created_at": datetime.now().isoformat()
@@ -46,7 +46,7 @@ class AuthService:
                     "user_id": str(uuid.uuid4()),
                     "username": "reviewer",
                     "password_hash": self._hash_password("reviewer123"),
-                    "email": "reviewer@graphgen.com",
+                    "email": "reviewer@arborgraph.com",
                     "role": UserRole.REVIEWER,
                     "is_active": True,
                     "created_at": datetime.now().isoformat()

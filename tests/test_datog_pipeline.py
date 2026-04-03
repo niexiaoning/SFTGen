@@ -1,10 +1,10 @@
 """
-Tests for DA-ToG Phase 3: Critic and Pipeline Integration.
+Tests for ArborGraph-Intent Phase 3: Critic and Pipeline Integration.
 
 Tests cover:
 - RuleCritic: built-in rules, custom rules, scoring
 - LLMCritic: response parsing, validation with mock LLM
-- DAToGPipeline: end-to-end generation with all layers mocked
+- IntentPipeline: end-to-end generation with all layers mocked
 """
 
 import asyncio
@@ -13,18 +13,18 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from graphgen.bases.base_critic import CriticResult
-from graphgen.models.critic.llm_critic import LLMCritic
-from graphgen.models.critic.rule_critic import (
+from arborgraph.bases.base_critic import CriticResult
+from arborgraph.models.critic.llm_critic import LLMCritic
+from arborgraph.models.critic.rule_critic import (
     RuleCritic,
     answer_contains_keywords,
     answer_not_identical_to_question,
     min_answer_length,
     min_question_length,
 )
-from graphgen.models.graph_adapter.networkx_adapter import NetworkXGraphAdapter
-from graphgen.models.taxonomy.taxonomy_tree import TaxonomyTree
-from graphgen.datog_pipeline import DAToGPipeline
+from arborgraph.models.graph_adapter.networkx_adapter import NetworkXGraphAdapter
+from arborgraph.models.taxonomy.taxonomy_tree import TaxonomyTree
+from arborgraph.intent_pipeline import IntentPipeline
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -257,10 +257,10 @@ class TestLLMCritic:
 
 
 # ═══════════════════════════════════════════════════════════════════
-# DAToGPipeline Tests
+# IntentPipeline Tests
 # ═══════════════════════════════════════════════════════════════════
 
-class TestDAToGPipeline:
+class TestIntentPipeline:
     def _make_pipeline(self, llm_response: str = None):
         tree = TaxonomyTree.from_dict(SAMPLE_TREE)
         graph = MockGraphStorage()
@@ -276,7 +276,7 @@ class TestDAToGPipeline:
         critic.add_rule("min_answer", min_answer_length(5), weight=1.0)
         critic.add_rule("not_identical", answer_not_identical_to_question(), weight=1.0)
 
-        return DAToGPipeline(
+        return IntentPipeline(
             taxonomy_tree=tree,
             graph_adapter=adapter,
             llm_client=mock_llm,
@@ -294,7 +294,7 @@ class TestDAToGPipeline:
                 assert "question" in qa
                 assert "answer" in qa
                 assert "metadata" in qa
-                assert qa["metadata"]["pipeline"] == "datog"
+                assert qa["metadata"]["pipeline"] == "intent"
 
         asyncio.run(_run())
 

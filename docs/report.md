@@ -990,7 +990,7 @@ python -m graphgen.generate \
 
 # 2. 评估GraphGen生成的问答对
 python -m graphgen.evaluate \
-    --folder cache/experiments/graphgen/data/graphgen/<timestamp>/qa \
+    --folder cache/experiments/graphgen/data/arborgraph/<timestamp>/qa \
     --output cache/experiments/results/graphgen \
     --tokenizer cl100k_base \
     --reward "OpenAssistant/reward-model-deberta-v3-large-v2" \
@@ -1063,7 +1063,7 @@ python -m graphgen.evaluate \
 # 2. 计算GraphGen的知识覆盖指标
 python scripts/coverage_metrics.py \
     --kg_dir cache/<working_dir> \
-    --qa_folder cache/experiments/graphgen/data/graphgen/<timestamp>/qa \
+    --qa_folder cache/experiments/graphgen/data/arborgraph/<timestamp>/qa \
     --output cache/experiments/results/graphgen/coverage_metrics.json \
     --long_tail_threshold 5 \
     --min_path_length 2
