@@ -31,6 +31,9 @@ export interface TaskConfig {
   // 优化配置
   enable_extraction_cache?: boolean  // 启用提取缓存
   dynamic_chunk_size?: boolean  // 动态chunk大小调整
+  // Prompt 合并抽取（Prompt Merging）
+  enable_prompt_merging?: boolean  // 是否启用合并抽取
+  prompt_merge_size?: number  // 每次合并的 chunk 数量
   use_multi_template?: boolean  // 多模板采样
   template_seed?: number  // 模板随机种子（可选）
   // 批量请求配置（知识抽取阶段）

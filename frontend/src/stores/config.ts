@@ -38,6 +38,9 @@ export const useConfigStore = defineStore('config', () => {
     // 优化配置
     enable_extraction_cache: true,  // 默认启用提取缓存
     dynamic_chunk_size: false,  // 默认关闭动态chunk大小
+    // Prompt 合并抽取（Prompt Merging）
+    enable_prompt_merging: true,  // 默认启用合并抽取
+    prompt_merge_size: 5,  // 默认每次合并 5 个 chunk
     use_multi_template: true,  // 默认启用多模板采样
     template_seed: undefined,  // 可选，用于可复现性
     // 批量请求配置（知识抽取阶段）
@@ -138,6 +141,9 @@ export const useConfigStore = defineStore('config', () => {
       // 优化配置
       enable_extraction_cache: true,
       dynamic_chunk_size: false,
+      // Prompt 合并抽取（Prompt Merging）
+      enable_prompt_merging: true,
+      prompt_merge_size: 5,
       use_multi_template: true,
       template_seed: undefined,
       // 批量请求配置（知识抽取阶段）

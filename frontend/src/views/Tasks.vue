@@ -53,10 +53,10 @@
         <el-table-column prop="task_name" label="任务名称" width="120" show-overflow-tooltip />
         <el-table-column label="任务类型" width="110">
           <template #default="{ row }">
-            <el-tag v-if="row.task_type === 'evaluation'" type="success" size="small">
+            <el-tag v-if="row.task_type === 'evaluation'" type="success" effect="dark" size="small">
               评测任务
             </el-tag>
-            <el-tag v-else type="primary" size="small">
+            <el-tag v-else type="primary" effect="dark" size="small">
               SFT任务
             </el-tag>
           </template>

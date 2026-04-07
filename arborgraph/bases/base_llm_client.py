@@ -58,11 +58,13 @@ class BaseLLMClient(abc.ABC):
         raise NotImplementedError
 
     @staticmethod
-    def filter_think_tags(text: str, think_tag: str = "think") -> str:
+    def filter_think_tags(text: Optional[str], think_tag: str = "think") -> str:
         """
         Remove <think> tags from the text.
         If the text contains <think> and </think>, it removes everything between them and the tags themselves.
         """
+        if text is None:
+            return ""
         think_pattern = re.compile(rf"<{think_tag}>.*?</{think_tag}>", re.DOTALL)
         filtered_text = think_pattern.sub("", text).strip()
         return filtered_text if filtered_text else text.strip()

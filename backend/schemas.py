@@ -42,6 +42,11 @@ class TaskConfig(BaseModel):
     # 优化配置
     enable_extraction_cache: bool = True  # 启用提取缓存（默认开启）
     dynamic_chunk_size: bool = False  # 动态chunk大小调整（默认关闭）
+    # Prompt 合并抽取（Prompt Merging）
+    # 注意：这与“批量请求 BatchRequestManager（enable_batch_requests/batch_size/max_wait_time）”不同。
+    # Prompt 合并会把多个 chunk 合成一个 prompt，以减少 LLM 调用次数。
+    enable_prompt_merging: bool = True  # 是否启用合并抽取（默认开启）
+    prompt_merge_size: int = 5  # 每次合并的 chunk 数量（默认 5）
     use_multi_template: bool = True  # 多模板采样（默认开启）
     template_seed: Optional[int] = None  # 模板随机种子（可选）
     # 批量请求配置（知识抽取阶段）

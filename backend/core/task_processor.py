@@ -446,6 +446,9 @@ class TaskProcessor:
                 # 优化配置
                 "dynamic_chunk_size": getattr(config, "dynamic_chunk_size", False),
                 "enable_extraction_cache": getattr(config, "enable_extraction_cache", True),
+                # Prompt 合并抽取（与 BatchRequestManager 批量请求不同）
+                "enable_prompt_merging": getattr(config, "enable_prompt_merging", True),
+                "prompt_merge_size": getattr(config, "prompt_merge_size", 5),
                 "enable_batch_requests": getattr(config, "enable_batch_requests", True),
                 "batch_size": getattr(config, "batch_size", 10),
                 "max_wait_time": getattr(config, "max_wait_time", 0.5),

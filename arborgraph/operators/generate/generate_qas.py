@@ -108,6 +108,61 @@ def _build_context_text(context_block: dict[str, Any]) -> str:
     return "\n".join(line for line in context_lines if line.strip())
 
 
+def _hierarchical_context_from_entry(
+    entry: dict[str, Any],
+    hierarchical_relations: list[str],
+) -> str:
+    """
+    Build the same hierarchical_context string used in atomic question prompts,
+    for answer-stage templates that include {hierarchical_context}.
+    """
+    from arborgraph.utils.hierarchy_utils import HierarchySerializer
+
+    ctx = entry.get("context") if isinstance(entry.get("context"), dict) else {}
+    nodes_raw = ctx.get("nodes") or []
+    edges_raw = ctx.get("edges") or []
+    nodes: list[tuple[str, dict]] = []
+    for n in nodes_raw:
+        if not isinstance(n, dict):
+            continue
+        nid = n.get("name")
+        if not nid:
+            continue
+        nodes.append(
+            (
+                nid,
+                {
+                    "description": n.get("description", ""),
+                    "chunk_id": n.get("chunk_id", ""),
+                    "entity_type": n.get("entity_type", ""),
+                },
+            )
+        )
+    edges: list[tuple[Any, Any, dict]] = []
+    for e in edges_raw:
+        if not isinstance(e, dict):
+            continue
+        s, t = e.get("source"), e.get("target")
+        if s is None or t is None:
+            continue
+        edges.append(
+            (
+                s,
+                t,
+                {
+                    "relation_type": e.get("relation_type", ""),
+                    "description": e.get("description", ""),
+                },
+            )
+        )
+    if not nodes:
+        return ""
+    ser = HierarchySerializer(hierarchical_relations)
+    return ser.serialize(
+        nodes, edges, structure_format="markdown", require_hierarchy=True
+    )
+
+
 def _parse_answer_from_response(response: str) -> str:
     """
     Parse answer text from model response.
@@ -752,6 +807,7 @@ async def generate_qas(
                 use_multi_template=use_multi_template,
                 template_seed=template_seed,
                 chinese_only=chinese_only,
+                hierarchical_relations=hierarchical_relations,
             )
 
             async def generate_questions_with_storage(batch):
@@ -779,16 +835,24 @@ async def generate_qas(
                     if question_hash in session_seen_hashes:
                         continue
                     session_seen_hashes.add(question_hash)
+                    ctx = payload.get("context", {})
+                    if not isinstance(ctx, dict):
+                        ctx = {}
+                    hierarchical_context = _hierarchical_context_from_entry(
+                        {"context": ctx},
+                        hierarchical_relations,
+                    )
                     pending_questions.append(
                         {
                             "hash": question_hash,
                             "question": question,
-                            "context": payload.get("context", {}),
+                            "context": ctx,
                             "graph": payload.get("graph", {}),
                             "source_chunks": payload.get("source_chunks", []),
                             "source_documents": payload.get("source_documents", []),
                             "metadata": dict(payload.get("metadata") or {}),
                             "reasoning_path": payload.get("reasoning_path", ""),
+                            "hierarchical_context": hierarchical_context,
                         }
                     )
 
@@ -847,10 +911,18 @@ async def generate_qas(
                         template = ATOMIC_ANSWER_PROMPT.get(
                             language, ATOMIC_ANSWER_PROMPT["en"]
                         )
-                    
-                    # 3. 构建 prompt
+
+                    if "hierarchical_context" in entry:
+                        hierarchical_context = entry["hierarchical_context"]
+                    else:
+                        hierarchical_context = _hierarchical_context_from_entry(
+                            entry, hierarchical_relations
+                        )
+
+                    # 3. 构建 prompt（模板含 {context}、{hierarchical_context}、{question}）
                     prompt = template.format(
                         context=context_text,
+                        hierarchical_context=hierarchical_context,
                         question=entry["question"],
                     )
                     

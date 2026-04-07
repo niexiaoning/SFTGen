@@ -13,6 +13,7 @@ from tenacity import (
 from arborgraph.bases.base_llm_client import BaseLLMClient
 from arborgraph.bases.datatypes import Token
 from arborgraph.models.llm.limitter import RPM, TPM
+from arborgraph.utils import logger
 
 
 def get_top_response_tokens(response: openai.ChatCompletion) -> List[Token]:
@@ -203,7 +204,28 @@ class OpenAIClient(BaseLLMClient):
                     "total_tokens": completion.usage.total_tokens,
                 }
             )
-        return self.filter_think_tags(completion.choices[0].message.content)
+        choice = completion.choices[0]
+        msg = choice.message
+        raw_content = msg.content if msg.content is not None else ""
+        filtered = self.filter_think_tags(raw_content)
+        if not (filtered and str(filtered).strip()):
+            comp_tok = (
+                completion.usage.completion_tokens
+                if hasattr(completion, "usage") and completion.usage
+                else None
+            )
+            refusal = getattr(msg, "refusal", None)
+            logger.warning(
+                "[OpenAIClient] generate_answer 得到空内容: model=%s finish_reason=%s "
+                "completion_tokens=%s refusal=%r raw_content_len=%d "
+                "(常见于上游限流、content_filter、仅返回 reasoning 通道、或 message.content 为 null)",
+                self.model_name,
+                getattr(choice, "finish_reason", None),
+                comp_tok,
+                refusal,
+                len(raw_content),
+            )
+        return filtered if filtered else ""
 
     async def generate_inputs_prob(
         self, text: str, history: Optional[List[str]] = None, **extra: Any

@@ -58,7 +58,8 @@ class LightRAGKGBuilder(BaseKGBuilder):
             chunk_hash = compute_content_hash(content, prefix="extract-")
             cached_result = await self.cache_storage.get_by_id(chunk_hash)
             if cached_result is not None:
-                logger.debug("Cache hit for chunk %s", chunk_id)
+                # 用 info 级别记录关键里程碑，保证不同输入时日志结构一致（便于定位差异）
+                logger.info("[KG Extract] Cache hit: chunk_id=%s", chunk_id)
                 return cached_result["nodes"], cached_result["edges"]
 
         # step 1: language_detection
@@ -67,13 +68,57 @@ class LightRAGKGBuilder(BaseKGBuilder):
         hint_prompt = KG_EXTRACTION_PROMPT[language]["TEMPLATE"].format(
             **KG_EXTRACTION_PROMPT["FORMAT"], input_text=content
         )
+        logger.info(
+            "[KG Extract] Start: chunk_id=%s language=%s prompt_len=%d content_len=%d",
+            chunk_id,
+            language,
+            len(hint_prompt),
+            len(content),
+        )
 
         # step 2: initial glean
-        if self.batch_manager:
-            final_result = await self.batch_manager.add_request(hint_prompt)
-        else:
-            final_result = await self.llm_client.generate_answer(hint_prompt)
-        logger.debug("First extraction result: %s", final_result[:200] if len(final_result) > 200 else final_result)
+        # 注意：部分 OpenAI-兼容服务在限流/异常边界情况下可能返回空 content（而不是抛异常）。
+        # 为了让单 chunk 与合并抽取路径的行为一致，这里将“空响应”视为可重试错误。
+        final_result = ""
+        max_empty_retries = 3
+        for attempt in range(1, max_empty_retries + 1):
+            if self.batch_manager:
+                final_result = await self.batch_manager.add_request(hint_prompt)
+            else:
+                final_result = await self.llm_client.generate_answer(hint_prompt)
+
+            if final_result and str(final_result).strip():
+                break
+
+            wait_s = min(2 ** attempt, 8)
+            logger.warning(
+                "[KG Extract] Empty LLM response: chunk_id=%s attempt=%d/%d retry_after=%.1fs prompt_len=%d",
+                chunk_id,
+                attempt,
+                max_empty_retries,
+                wait_s,
+                len(hint_prompt),
+            )
+            # 避免引入 asyncio 依赖到文件头：这里局部导入
+            import asyncio
+
+            await asyncio.sleep(wait_s)
+
+        if not final_result or not str(final_result).strip():
+            raise RuntimeError(
+                f"LLM returned empty response for KG extraction (chunk_id={chunk_id}). "
+                "This usually indicates upstream throttling, content filtering, or an OpenAI-compatible API returning empty content."
+            )
+
+        logger.info(
+            "[KG Extract] LLM response received: chunk_id=%s response_len=%d",
+            chunk_id,
+            len(final_result),
+        )
+        logger.debug(
+            "First extraction result: %s",
+            final_result[:200] if len(final_result) > 200 else final_result,
+        )
 
         # step3: iterative refinement
         # history = pack_history_conversations(hint_prompt, final_result)
@@ -104,9 +149,11 @@ class LightRAGKGBuilder(BaseKGBuilder):
             expected_format="kg_extraction"
         )
         
-        logger.debug(
-            "KG extraction repair: original length=%d, repaired length=%d",
-            len(final_result), len(repaired_result)
+        logger.info(
+            "[KG Extract] Repair complete: chunk_id=%s original_len=%d repaired_len=%d",
+            chunk_id,
+            len(final_result),
+            len(repaired_result),
         )
         
         records = split_string_by_multi_markers(
@@ -141,6 +188,13 @@ class LightRAGKGBuilder(BaseKGBuilder):
                 edges[key].append(relation)
 
         result = (dict(nodes), dict(edges))
+        logger.info(
+            "[KG Extract] Parsed: chunk_id=%s records=%d nodes=%d edges=%d",
+            chunk_id,
+            len(records),
+            sum(len(v) for v in result[0].values()),
+            sum(len(v) for v in result[1].values()),
+        )
         
         # Cache the result if enabled
         if self.enable_cache:
@@ -152,7 +206,7 @@ class LightRAGKGBuilder(BaseKGBuilder):
                     "chunk_id": chunk_id
                 }
             })
-            logger.debug("Cached extraction result for chunk %s", chunk_id)
+            logger.info("[KG Extract] Cached: chunk_id=%s", chunk_id)
         
         return result
 

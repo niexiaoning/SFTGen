@@ -197,12 +197,18 @@ async def extract_with_prompt_merging(
                 break
 
             wait_s = min(2 ** attempt, 8)
+            preview = merged_prompt.replace("\n", "\\n")
+            if len(preview) > 500:
+                preview = preview[:500] + "..."
             logger.warning(
-                "Empty LLM response for merged batch (chunks=%d) on attempt %d/%d; retrying after %.1fs",
+                "Empty LLM response for merged batch (chunks=%d) on attempt %d/%d; retrying after %.1fs. "
+                "merged_prompt_len=%d preview=%r",
                 len(chunk_batch),
                 attempt,
                 max_empty_retries,
                 wait_s,
+                len(merged_prompt),
+                preview,
             )
             await asyncio.sleep(wait_s)
 

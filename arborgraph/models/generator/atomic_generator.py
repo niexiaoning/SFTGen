@@ -392,8 +392,21 @@ class AtomicQuestionGenerator(AtomicGenerator):
     Generator that only produces questions (used for two-phase generation).
     """
 
-    def __init__(self, llm_client, use_multi_template: bool = True, template_seed: Optional[int] = None, chinese_only: bool = False):
-        super().__init__(llm_client, use_multi_template, template_seed, chinese_only)
+    def __init__(
+        self,
+        llm_client,
+        use_multi_template: bool = True,
+        template_seed: Optional[int] = None,
+        chinese_only: bool = False,
+        hierarchical_relations: Optional[list[str]] = None,
+    ):
+        super().__init__(
+            llm_client,
+            use_multi_template,
+            template_seed,
+            chinese_only,
+            hierarchical_relations=hierarchical_relations,
+        )
         self._generation_mode = "atomic_question"
 
     def build_prompt(

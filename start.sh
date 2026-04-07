@@ -41,8 +41,8 @@ check_conda() {
         exit 1
     fi
     
-    if ! conda env list | grep -q "^sftgen "; then
-        print_error "Conda 环境 'sftgen' 不存在"
+    if ! conda env list | grep -q "^arborgraph "; then
+        print_error "Conda 环境 'arborgraph' 不存在"
         print_message "请先创建环境: conda env create -f environment.yml"
         exit 1
     fi
@@ -52,7 +52,7 @@ check_conda() {
 activate_environment() {
     print_message "激活 Conda 环境..."
     eval "$(conda shell.bash hook)"
-    conda activate sftgen
+    conda activate arborgraph
     # 确保 conda 环境中的 node/npm 在 PATH 中（非交互 shell 下有时缺省）
     if [ -n "${CONDA_PREFIX:-}" ]; then
         export PATH="$CONDA_PREFIX/bin:$PATH"
@@ -156,7 +156,7 @@ start_frontend() {
             print_warning "frontend 目录不存在，跳过前端服务启动"
         elif ! command -v node &> /dev/null; then
             print_warning "Node.js 未安装或不在 PATH 中，跳过 Vue 前端（端口 3000）"
-            print_message "在已激活的 sftgen 环境中执行: conda install -c conda-forge nodejs npm"
+            print_message "在已激活的 arborgraph 环境中执行: conda install -c conda-forge nodejs npm"
             print_message "安装后重新运行 ./start.sh start"
         fi
     fi
