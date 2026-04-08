@@ -245,6 +245,13 @@ stop_services() {
     
     # 清理 PID 文件
     rm -f .backend.pid .frontend.pid
+
+    # 清理日志文件（默认清理；需要保留时设置 KEEP_LOGS=1）
+    if [ "${KEEP_LOGS:-0}" != "1" ]; then
+        rm -f .backend.log .frontend.log
+    else
+        print_message "KEEP_LOGS=1，保留 .backend.log / .frontend.log"
+    fi
     
     print_message "所有服务已停止"
 }
