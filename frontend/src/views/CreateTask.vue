@@ -110,6 +110,19 @@
             </div>
           </el-form-item>
 
+          <el-form-item label="LLM 输出上限 (max_tokens)">
+            <el-input-number
+              v-model="taskConfig.llm_max_tokens"
+              :min="256"
+              :max="32768"
+              :step="256"
+              controls-position="right"
+            />
+            <div class="form-item-tip">
+              限制“模型输出 token 数”，不是上下文窗口。过小会导致 finish_reason=length，关系抽取更容易缺失。
+            </div>
+          </el-form-item>
+
           <el-form-item label="使用 Trainee 模型">
             <el-switch v-model="taskConfig.if_trainee_model" />
           </el-form-item>

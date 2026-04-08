@@ -50,6 +50,19 @@
               <span class="form-item-tip">智谱等 OpenAI 兼容接口的额外字段，会写入任务环境变量</span>
             </el-form-item>
 
+            <el-form-item label="LLM 输出上限 (max_tokens)">
+              <el-input-number
+                v-model="config.llm_max_tokens"
+                :min="256"
+                :max="32768"
+                :step="256"
+                controls-position="right"
+              />
+              <span class="form-item-tip">
+                限制“模型输出 token 数”，不是上下文窗口。过小会导致 finish_reason=length，抽取关系更容易缺失。
+              </span>
+            </el-form-item>
+
             <el-divider />
 
             <el-form-item label="使用 Trainee 模型">

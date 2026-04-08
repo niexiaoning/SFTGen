@@ -22,6 +22,8 @@ class TaskConfig(BaseModel):
     llm_extra_body_json: str = ""
     synthesizer_extra_body_json: str = ""
     trainee_extra_body_json: str = ""
+    # LLM 生成上限（OpenAI `max_tokens`：限制“输出 token 数”，不是模型上下文窗口）
+    llm_max_tokens: int = 4096
     chunk_size: int = 1024
     chunk_overlap: int = 100
     quiz_samples: int = 2

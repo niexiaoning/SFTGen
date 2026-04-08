@@ -76,6 +76,7 @@ class TaskProcessor:
                 request_limit=True,
                 rpm=RPM(config.rpm),
                 tpm=TPM(config.tpm),
+                max_tokens=config.llm_max_tokens,
                 tokenizer=tokenizer_instance,
                 extra_body=load_merged_extra_body(
                     "LLM_EXTRA_BODY_JSON", "SYNTHESIZER_EXTRA_BODY_JSON"
@@ -88,6 +89,7 @@ class TaskProcessor:
                 request_limit=True,
                 rpm=RPM(config.rpm),
                 tpm=TPM(config.tpm),
+                max_tokens=config.llm_max_tokens,
                 tokenizer=tokenizer_instance,
                 extra_body=load_merged_extra_body(
                     "LLM_EXTRA_BODY_JSON", "TRAINEE_EXTRA_BODY_JSON"

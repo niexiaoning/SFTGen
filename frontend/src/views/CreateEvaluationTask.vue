@@ -98,6 +98,19 @@
             <el-input v-model="evalConfig.synthesizer_model" />
           </el-form-item>
 
+            <el-form-item label="LLM 输出上限 (max_tokens)">
+              <el-input-number
+                v-model="evalConfig.llm_max_tokens"
+                :min="256"
+                :max="32768"
+                :step="256"
+                controls-position="right"
+              />
+              <div class="form-item-tip">
+                限制“模型输出 token 数”，不是上下文窗口。过小会导致输出被截断。
+              </div>
+            </el-form-item>
+
           <el-form-item label="LLM 扩展请求体 (JSON)">
             <el-input
               v-model="evalConfig.llm_extra_body_json"
@@ -310,6 +323,7 @@ const evalConfig = ref({
   synthesizer_url: 'https://api.siliconflow.cn/v1',
   synthesizer_model: 'Qwen/Qwen2.5-7B-Instruct',
   llm_extra_body_json: '',
+  llm_max_tokens: 4096,
   rpm: 500,
   tpm: 100000,
   chunk_size: 1024,
@@ -438,6 +452,7 @@ const submitTask = async () => {
       synthesizer_url: evalConfig.value.synthesizer_url,
       synthesizer_model: evalConfig.value.synthesizer_model,
       llm_extra_body_json: evalConfig.value.llm_extra_body_json || '',
+      llm_max_tokens: evalConfig.value.llm_max_tokens,
       rpm: evalConfig.value.rpm,
       tpm: evalConfig.value.tpm,
       chunk_size: evalConfig.value.chunk_size,
@@ -492,6 +507,7 @@ onMounted(() => {
         synthesizer_url: savedConfig.synthesizer_url || 'https://api.siliconflow.cn/v1',
         synthesizer_model: savedConfig.synthesizer_model || 'Qwen/Qwen2.5-7B-Instruct',
         llm_extra_body_json: savedConfig.llm_extra_body_json || '',
+        llm_max_tokens: savedConfig.llm_max_tokens || 4096,
         rpm: savedConfig.rpm || 500,
         tpm: savedConfig.tpm || 100000,
         chunk_size: savedConfig.chunk_size || 1024,

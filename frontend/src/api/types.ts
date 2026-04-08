@@ -11,6 +11,8 @@ export interface TaskConfig {
   llm_extra_body_json?: string
   synthesizer_extra_body_json?: string
   trainee_extra_body_json?: string
+  /** OpenAI max_tokens：限制“输出 token 数”，不是上下文窗口 */
+  llm_max_tokens?: number
   chunk_size?: number
   chunk_overlap?: number
   quiz_samples?: number
