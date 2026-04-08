@@ -482,7 +482,7 @@ onMounted(() => {
 }
 
 :deep(.el-card__header) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
   color: white;
   border-bottom: none;
   padding: 20px 24px;
@@ -529,7 +529,7 @@ onMounted(() => {
   line-height: 1.5;
   padding: 8px 12px;
   background: #f8fafc;
-  border-left: 3px solid #10b981;
+  border-left: 3px solid #67c23a;
   border-radius: 4px;
 }
 
@@ -590,7 +590,7 @@ onMounted(() => {
 
 :deep(.el-collapse-item__header:hover) {
   background: #f0f2f5;
-  color: #10b981;
+  color: #67c23a;
 }
 
 :deep(.el-collapse-item__wrap) {

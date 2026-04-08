@@ -272,7 +272,7 @@ onMounted(async () => {
 }
 
 :deep(.el-card__header) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
   color: white;
   border-bottom: none;
   padding: 20px 24px;
@@ -319,7 +319,7 @@ onMounted(async () => {
   line-height: 1.5;
   padding: 8px 12px;
   background: #f8fafc;
-  border-left: 3px solid #10b981;
+  border-left: 3px solid #8b5cf6;
   border-radius: 4px;
 }
 
@@ -347,7 +347,7 @@ onMounted(async () => {
 
 :deep(.el-collapse-item__header:hover) {
   background: #f0f2f5;
-  color: #10b981;
+  color: #8b5cf6;
 }
 
 :deep(.el-collapse-item__wrap) {
@@ -379,7 +379,7 @@ onMounted(async () => {
 }
 
 :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 0 0 1px #10b981 inset;
+  box-shadow: 0 0 0 1px #8b5cf6 inset;
 }
 
 :deep(.el-slider__runway) {
@@ -387,11 +387,11 @@ onMounted(async () => {
 }
 
 :deep(.el-slider__bar) {
-  background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
 }
 
 :deep(.el-slider__button) {
-  border: 2px solid #10b981;
+  border: 2px solid #8b5cf6;
 }
 
 :deep(.el-radio) {
@@ -403,7 +403,7 @@ onMounted(async () => {
 }
 
 :deep(.el-radio:hover) {
-  background: #ecfdf5;
+  background: #f0f4ff;
 }
 
 :deep(.el-radio__label) {
@@ -429,6 +429,6 @@ onMounted(async () => {
 }
 
 :deep(.el-alert--success) {
-  background: linear-gradient(135deg, #d1fae5 0%, #ecfdf5 100%);
+  background: linear-gradient(135deg, #e0e7ff 0%, #f0f9ff 100%);
 }
 </style>

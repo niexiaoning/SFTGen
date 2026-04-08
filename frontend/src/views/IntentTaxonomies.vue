@@ -384,7 +384,7 @@ onMounted(() => {
 }
 
 :deep(.el-card__header) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
   color: white;
   border-bottom: none;
   padding: 20px 24px;
@@ -446,7 +446,7 @@ onMounted(() => {
 }
 
 :deep(.el-dialog__header) {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
   padding: 20px;
   margin: 0;
 }
@@ -564,7 +564,7 @@ onMounted(() => {
 
 :deep(.el-statistic__number) {
   font-size: 24px;
-  color: #10b981;
+  color: #8b5cf6;
   font-weight: 600;
 }
 </style>
