@@ -37,7 +37,13 @@ async def handle_single_entity_extraction(
     record_attributes: list[str],
     chunk_key: str,
 ):
-    if len(record_attributes) < 4 or record_attributes[0] != '"entity"':
+    if len(record_attributes) < 4:
+        return None
+    kind = str(record_attributes[0]).strip().strip('"').strip("'").lower()
+    # Some LLM outputs may leave partial delimiters attached (e.g. `"entity"<`).
+    # Normalize by removing leading/trailing non-letters/underscores.
+    kind = re.sub(r"^[^a-z_]+|[^a-z_]+$", "", kind)
+    if kind != "entity":
         return None
     # add this record as a node in the G
     entity_name = clean_str(record_attributes[1].upper())
@@ -62,7 +68,11 @@ async def handle_single_relationship_extraction(
     record_attributes: list[str],
     chunk_key: str,
 ):
-    if len(record_attributes) < 4 or record_attributes[0] != '"relationship"':
+    if len(record_attributes) < 4:
+        return None
+    kind = str(record_attributes[0]).strip().strip('"').strip("'").lower()
+    kind = re.sub(r"^[^a-z_]+|[^a-z_]+$", "", kind)
+    if kind != "relationship":
         return None
     # add this record as edge
     source = clean_str(record_attributes[1].upper())
