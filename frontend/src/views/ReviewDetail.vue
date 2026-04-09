@@ -147,6 +147,15 @@
             <el-descriptions-item label="自动评分" v-if="currentItem.auto_review_score">
               {{ (currentItem.auto_review_score * 100).toFixed(0) }}%
             </el-descriptions-item>
+            <el-descriptions-item
+              label="自动评价"
+              v-if="currentItem.auto_review_reason"
+              :span="2"
+            >
+              <div class="auto-review-reason">
+                {{ currentItem.auto_review_reason }}
+              </div>
+            </el-descriptions-item>
             <el-descriptions-item label="审核人" v-if="currentItem.reviewer">
               {{ currentItem.reviewer }}
             </el-descriptions-item>
@@ -734,6 +743,13 @@ onMounted(() => {
   border-left: 3px solid #67c23a;
   color: #606266;
   line-height: 1.8;
+}
+
+.auto-review-reason {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.7;
+  color: #606266;
 }
 
 .info-section {

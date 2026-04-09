@@ -19,6 +19,7 @@ class TaskStatus(Enum):
     """任务状态枚举"""
     PENDING = "pending"      # 未开始
     PROCESSING = "processing"  # 处理中
+    AUTO_REVIEWING = "auto_reviewing"  # SFT 生成已完成，后台自动审核中
     COMPLETED = "completed"   # 已完成
     FAILED = "failed"        # 失败
 
@@ -107,6 +108,10 @@ class TaskManager:
                             filenames = task_data.get('filenames', [])
                             filepaths = task_data.get('filepaths', [])
                         
+                        try:
+                            _st = TaskStatus(task_data['status'])
+                        except ValueError:
+                            _st = TaskStatus.PENDING
                         task = TaskInfo(
                             task_id=task_data['task_id'],
                             task_name=task_data.get('task_name', task_data.get('filename', '未命名任务')),
@@ -114,7 +119,7 @@ class TaskManager:
                             task_type=task_data.get('task_type', 'sft'),  # 默认为sft类型
                             filenames=filenames,
                             filepaths=filepaths,
-                            status=TaskStatus(task_data['status']),
+                            status=_st,
                             created_at=datetime.fromisoformat(task_data['created_at']),
                             started_at=datetime.fromisoformat(task_data['started_at']) if task_data.get('started_at') else None,
                             completed_at=datetime.fromisoformat(task_data['completed_at']) if task_data.get('completed_at') else None,
@@ -167,7 +172,7 @@ class TaskManager:
         task = self.tasks.get(task_id)
         if task:
             # 如果任务已完成但没有 qa_count，尝试从输出文件计算
-            if task.status == TaskStatus.COMPLETED and task.qa_count is None and task.output_file:
+            if task.status in (TaskStatus.COMPLETED, TaskStatus.AUTO_REVIEWING) and task.qa_count is None and task.output_file:
                 task.qa_count = self._calculate_qa_count(task.output_file)
                 # 保存更新后的任务信息
                 if task.qa_count is not None:
@@ -180,7 +185,7 @@ class TaskManager:
         # 为已完成但没有 qa_count 的任务计算问答对数量
         updated = False
         for task in tasks:
-            if task.status == TaskStatus.COMPLETED and task.qa_count is None and task.output_file:
+            if task.status in (TaskStatus.COMPLETED, TaskStatus.AUTO_REVIEWING) and task.qa_count is None and task.output_file:
                 task.qa_count = self._calculate_qa_count(task.output_file)
                 if task.qa_count is not None:
                     updated = True
@@ -233,6 +238,9 @@ class TaskManager:
                 
                 if status == TaskStatus.PROCESSING:
                     task.started_at = datetime.now()
+                elif status == TaskStatus.AUTO_REVIEWING:
+                    # 生成已结束，仅标记审核阶段；不写入 completed_at，避免用户误以为已全部结束
+                    pass
                 elif status in [TaskStatus.COMPLETED, TaskStatus.FAILED]:
                     task.completed_at = datetime.now()
                     if task.started_at:

@@ -22,8 +22,16 @@
                 启动任务
               </el-button>
               <el-button
+                v-if="task?.status === 'failed'"
+                type="danger"
+                @click="handleRestart"
+              >
+                <el-icon><RefreshLeft /></el-icon>
+                重启任务
+              </el-button>
+              <el-button
                 type="success"
-                :disabled="task?.status !== 'completed'"
+                :disabled="!canDownloadResult"
                 @click="handleDownload"
               >
                 下载结果
@@ -38,7 +46,7 @@
             <template v-else>
               <el-button
                 type="success"
-                :disabled="task?.status !== 'completed'"
+                :disabled="!canDownloadResult"
                 @click="handleDownload"
               >
                 下载结果
@@ -251,36 +259,16 @@
 
         <!-- 操作历史 -->
         <el-timeline style="margin-top: 40px">
-          <el-timeline-item :timestamp="formatDate(task.created_at)" placement="top">
-            <el-card>
-              <h4>任务创建</h4>
-              <p>任务已创建，等待启动</p>
-            </el-card>
-          </el-timeline-item>
-
           <el-timeline-item
-            v-if="task.started_at"
-            :timestamp="formatDate(task.started_at)"
+            v-for="ev in timelineEvents"
+            :key="ev.key"
+            :timestamp="formatDate(ev.timestamp)"
             placement="top"
+            :type="ev.type"
           >
             <el-card>
-              <h4>任务启动</h4>
-              <p>任务开始处理</p>
-            </el-card>
-          </el-timeline-item>
-
-          <el-timeline-item
-            v-if="task.completed_at"
-            :timestamp="formatDate(task.completed_at)"
-            placement="top"
-            :type="task.status === 'completed' ? 'success' : 'danger'"
-          >
-            <el-card>
-              <h4>{{ task.status === 'completed' ? '任务完成' : '任务失败' }}</h4>
-              <p v-if="task.status === 'completed'">
-                任务成功完成，耗时 {{ task.processing_time?.toFixed(2) }} 秒
-              </p>
-              <p v-else>{{ task.error_message }}</p>
+              <h4>{{ ev.title }}</h4>
+              <p>{{ ev.description }}</p>
             </el-card>
           </el-timeline-item>
         </el-timeline>
@@ -479,7 +467,7 @@ import type { TaskInfo } from '@/api/types'
 import api from '@/api'
 import { getEvaluationDataset, getEvaluationStats, downloadEvaluation } from '@/api/evaluation'
 import { ElMessage } from 'element-plus'
-import { ArrowLeft, Document, Download, View, CopyDocument, Plus, UploadFilled } from '@element-plus/icons-vue'
+import { ArrowLeft, Document, Download, View, CopyDocument, Plus, UploadFilled, RefreshLeft } from '@element-plus/icons-vue'
 import type { UploadInstance, UploadProps, UploadRawFile, UploadUserFile } from 'element-plus'
 import dayjs from 'dayjs'
 
@@ -495,6 +483,109 @@ let refreshTimer: number | null = null
 let logTimer: number | null = null
 
 const taskId = route.params.id as string
+
+const isTaskActivelyRunning = (s?: string) => s === 'processing' || s === 'auto_reviewing'
+
+const canDownloadResult = computed(() => {
+  const s = task.value?.status
+  return s === 'completed' || s === 'auto_reviewing'
+})
+
+const isRestartInferred = computed(() => {
+  const t = task.value
+  if (!t?.started_at || !t?.completed_at) return false
+  // 后端目前不记录重启事件：失败->pending 时不会清掉 completed_at。
+  // 当任务再次进入 processing/auto_reviewing 时，started_at 会被刷新到“更晚”，可据此推断发生过重启。
+  const s = t.status
+  if (s !== 'processing' && s !== 'auto_reviewing') return false
+  return new Date(t.started_at).getTime() > new Date(t.completed_at).getTime()
+})
+
+type TimelineEvent = {
+  key: string
+  timestamp: string
+  /** element-plus timeline type */
+  type?: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+  title: string
+  description: string
+  /** secondary ordering when same timestamp */
+  order: number
+}
+
+const timelineEvents = computed<TimelineEvent[]>(() => {
+  const t = task.value
+  if (!t) return []
+
+  const events: TimelineEvent[] = []
+
+  events.push({
+    key: 'created',
+    timestamp: t.created_at,
+    type: 'info',
+    title: '任务创建',
+    description: '任务已创建，等待启动',
+    order: 10
+  })
+
+  if (t.started_at) {
+    const restart = isRestartInferred.value
+    events.push({
+      key: 'started',
+      timestamp: t.started_at,
+      type: 'primary',
+      title: '任务启动',
+      description: '任务开始处理',
+      // 若推断为“重启”，希望在同一时间点先展示“任务重启”，再展示“任务启动”
+      order: restart ? 21 : 20
+    })
+
+    if (restart) {
+      events.push({
+        key: 'restarted',
+        timestamp: t.started_at,
+        type: 'warning',
+        title: '任务重启',
+        description: '检测到本次启动时间晚于上次结束时间，任务可能由失败状态重启。',
+        order: 20
+      })
+    }
+  }
+
+  if (t.status === 'auto_reviewing') {
+    // 后端没有单独的 auto_reviewing 时间戳；这里以 started_at（若有）或 created_at 作为展示锚点
+    events.push({
+      key: 'auto_reviewing',
+      timestamp: t.started_at || t.created_at,
+      type: 'warning',
+      title: '后台自动审核',
+      description: '生成结果已就绪，系统正在使用与任务相同的合成器配置逐条审核；可随时下载或进入审核页查看问答对。',
+      order: 30
+    })
+  }
+
+  if (t.completed_at) {
+    const isCompleted = t.status === 'completed'
+    events.push({
+      key: 'terminal',
+      timestamp: t.completed_at,
+      type: isCompleted ? 'success' : 'danger',
+      title: isCompleted ? '任务完成' : '任务失败',
+      description: isCompleted
+        ? `任务成功完成，耗时 ${t.processing_time?.toFixed(2) ?? '-'} 秒`
+        : (t.error_message || '任务失败'),
+      order: 40
+    })
+  }
+
+  return events
+    .slice()
+    .sort((a, b) => {
+      const ta = new Date(a.timestamp).getTime()
+      const tb = new Date(b.timestamp).getTime()
+      if (ta !== tb) return ta - tb
+      return a.order - b.order
+    })
+})
 
 // 日志面板相关
 const logContent = ref('')
@@ -544,7 +635,7 @@ const stopTaskRefreshTimer = () => {
 
 const startTaskRefreshTimer = () => {
   if (refreshTimer) return
-  if (task.value?.status !== 'processing') return
+  if (!isTaskActivelyRunning(task.value?.status)) return
   refreshTimer = window.setInterval(() => {
     fetchTaskDetail(true)
   }, 3000)
@@ -559,7 +650,7 @@ const stopLogTimer = () => {
 
 const startLogTimer = () => {
   if (logTimer) return
-  if (task.value?.status !== 'processing') return
+  if (!isTaskActivelyRunning(task.value?.status)) return
   if (!task.value?.log_file) return
   if (!logAutoRefresh.value) return
   logTimer = window.setInterval(() => {
@@ -567,12 +658,12 @@ const startLogTimer = () => {
   }, 2000)
 }
 
-/** 根据任务状态启停轮询：仅 processing 时拉任务详情与日志；终态时停表并补拉一次完整日志 */
+/** 根据任务状态启停轮询：processing / auto_reviewing 时拉任务详情与日志；终态时停表并补拉一次完整日志 */
 const syncPollingTimers = async (prevStatus: string | undefined) => {
   const status = task.value?.status
   const terminal = status === 'completed' || status === 'failed'
 
-  if (status === 'processing') {
+  if (isTaskActivelyRunning(status)) {
     startTaskRefreshTimer()
     if (logAutoRefresh.value && task.value?.log_file) {
       startLogTimer()
@@ -582,7 +673,9 @@ const syncPollingTimers = async (prevStatus: string | undefined) => {
   } else {
     stopTaskRefreshTimer()
     stopLogTimer()
-    if (prevStatus === 'processing' && terminal) {
+    const wasActive =
+      prevStatus === 'processing' || prevStatus === 'auto_reviewing'
+    if (wasActive && terminal) {
       await refreshLog(true)
     }
   }
@@ -604,7 +697,7 @@ const fetchTaskDetail = async (silent: boolean = false) => {
 }
 
 watch(logAutoRefresh, () => {
-  if (task.value?.status === 'processing') {
+  if (isTaskActivelyRunning(task.value?.status)) {
     if (logAutoRefresh.value && task.value?.log_file) {
       startLogTimer()
     } else {
@@ -659,6 +752,7 @@ const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
     pending: '待处理',
     processing: '处理中',
+    auto_reviewing: '自动审核中',
     completed: '已完成',
     failed: '失败'
   }
@@ -670,6 +764,7 @@ const getStatusType = (status: string) => {
   const typeMap: Record<string, any> = {
     pending: 'warning',
     processing: 'primary',
+    auto_reviewing: 'warning',
     completed: 'success',
     failed: 'danger'
   }
@@ -700,6 +795,24 @@ const handleStart = async () => {
     }
   } catch (error) {
     ElMessage.error('任务启动失败')
+  }
+}
+
+// 重启任务（失败任务）
+const handleRestart = async () => {
+  if (!task.value) return
+  try {
+    const response = await api.resumeTask(task.value.task_id, task.value.config || configStore.config)
+    if (response.success) {
+      ElMessage.success('任务已重启')
+      await fetchTaskDetail()
+      // 重启后通常会产生新日志内容，主动拉一次全量
+      await refreshLog(true)
+    } else {
+      ElMessage.error(response.error || '任务重启失败')
+    }
+  } catch (error) {
+    ElMessage.error('任务重启失败')
   }
 }
 

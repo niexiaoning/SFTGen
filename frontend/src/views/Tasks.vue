@@ -11,6 +11,7 @@
               <span class="stat-inline-item processing">处理中: <strong>{{ taskStats.processing }}</strong></span>
               <span class="stat-inline-item completed">已完成: <strong>{{ taskStats.completed }}</strong></span>
               <span class="stat-inline-item failed">失败: <strong>{{ taskStats.failed }}</strong></span>
+              <span class="stat-inline-item reviewing">自动审核中: <strong>{{ taskStats.auto_reviewing ?? 0 }}</strong></span>
             </div>
           </div>
           <div class="header-actions">
@@ -23,6 +24,7 @@
               <el-option label="全部" value="" />
               <el-option label="待处理" value="pending" />
               <el-option label="处理中" value="processing" />
+              <el-option label="自动审核中" value="auto_reviewing" />
               <el-option label="已完成" value="completed" />
               <el-option label="失败" value="failed" />
             </el-select>
@@ -135,7 +137,7 @@
                 @click.stop="handleResumeTask(row)"
               >
                 <el-icon><RefreshLeft /></el-icon>
-                重新开始
+                重启任务
               </el-button>
               <el-button
                 v-else-if="canResumeTask(row)"
@@ -149,7 +151,7 @@
               <el-button
                 size="small"
                 type="success"
-                :disabled="row.status !== 'completed'"
+                :disabled="!canViewOutput(row.status)"
                 @click.stop="showDownloadDialog(row)"
               >
                 <el-icon><Download /></el-icon>
@@ -158,7 +160,7 @@
               <el-button
                 size="small"
                 type="primary"
-                :disabled="row.status !== 'completed'"
+                :disabled="!canViewOutput(row.status)"
                 @click.stop="handleReview(row)"
               >
                 <el-icon><Edit /></el-icon>
@@ -194,7 +196,7 @@
               <el-button
                 size="small"
                 type="success"
-                :disabled="row.status !== 'completed'"
+                :disabled="!canViewOutput(row.status)"
                 @click.stop="showDownloadDialog(row)"
               >
                 <el-icon><Download /></el-icon>
@@ -203,7 +205,7 @@
               <el-button
                 size="small"
                 type="primary"
-                :disabled="row.status !== 'completed'"
+                :disabled="!canViewOutput(row.status)"
                 @click.stop="handleReview(row)"
               >
                 <el-icon><Edit /></el-icon>
@@ -335,9 +337,13 @@ const taskStats = ref({
   total: 0,
   pending: 0,
   processing: 0,
+  auto_reviewing: 0,
   completed: 0,
   failed: 0
 })
+
+const canViewOutput = (status: string) =>
+  status === 'completed' || status === 'auto_reviewing'
 
 let refreshTimer: number | null = null
 
@@ -406,6 +412,7 @@ const fetchTaskStats = async () => {
         total: 0,
         pending: 0,
         processing: 0,
+        auto_reviewing: 0,
         completed: 0,
         failed: 0
       }
@@ -417,6 +424,7 @@ const fetchTaskStats = async () => {
       total: 0,
       pending: 0,
       processing: 0,
+      auto_reviewing: 0,
       completed: 0,
       failed: 0
     }
@@ -441,6 +449,7 @@ const getStatusText = (status: string) => {
   const statusMap: Record<string, string> = {
     pending: '待处理',
     processing: '处理中',
+    auto_reviewing: '自动审核中',
     completed: '已完成',
     failed: '失败'
   }
@@ -452,6 +461,7 @@ const getStatusType = (status: string) => {
   const typeMap: Record<string, any> = {
     pending: 'warning',
     processing: 'primary',
+    auto_reviewing: 'warning',
     completed: 'success',
     failed: 'danger'
   }
@@ -675,6 +685,10 @@ onUnmounted(() => {
 
 .stat-inline-item.failed strong {
   color: #ffa39e;
+}
+
+.stat-inline-item.reviewing strong {
+  color: #ffd591;
 }
 
 .header-actions {

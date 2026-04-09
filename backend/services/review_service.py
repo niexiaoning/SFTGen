@@ -57,8 +57,11 @@ class ReviewService:
             if not task:
                 return {"success": False, "error": "任务不存在"}
             
-            if task.status.value != "completed":
-                return {"success": False, "error": f"任务状态为 {task.status.value}，只能审核已完成的任务"}
+            if task.status.value not in ("completed", "auto_reviewing"):
+                return {
+                    "success": False,
+                    "error": f"任务状态为 {task.status.value}，需生成结束（含自动审核中）后才可加载数据",
+                }
             
             if not task.output_file or not os.path.exists(task.output_file):
                 return {"success": False, "error": "任务输出文件不存在"}

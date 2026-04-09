@@ -21,6 +21,7 @@ from arborgraph.utils import set_logger, logger
 from backend.utils.task_manager import task_manager, TaskStatus
 from backend.utils.workspace import setup_workspace
 from backend.schemas import TaskConfig
+from backend.core.post_sft_auto_review import schedule_post_sft_auto_review
 
 
 class TaskProcessor:
@@ -284,14 +285,19 @@ class TaskProcessor:
                 # 计算问答对数量
                 qa_count = len(output_data) if output_data else 0
                 
-                # 更新任务状态为完成（SFT任务）
+                # 生成结果已就绪：标记为「自动审核中」，并在后台跑自动审核（不阻塞，用户可立即查看问答对）
                 task_manager.update_task_status(
                     task_id,
-                    TaskStatus.COMPLETED,
+                    TaskStatus.AUTO_REVIEWING,
                     output_file=output_file,
                     token_usage=token_usage,
-                    qa_count=qa_count
+                    qa_count=qa_count,
+                    log_file=log_file,
                 )
+                logger.info(
+                    "[TaskProcessor] SFT 输出已保存，任务进入「自动审核中」；自动审核在后台执行，日志追加写入本任务日志文件"
+                )
+                schedule_post_sft_auto_review(task_id, log_file, config.dict())
             
             # 清理临时工作目录（但保留日志文件）
             # 只删除 working_dir，保留 logs 目录和日志文件

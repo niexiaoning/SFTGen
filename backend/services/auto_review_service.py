@@ -6,16 +6,22 @@
 import os
 import sys
 import json
-from typing import Dict, Any, List
 from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 
 # 添加项目根目录到路径
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+
+import logging
 
 from arborgraph.models import OpenAIClient
 from backend.schemas import DataItem, ReviewStatus, AutoReviewRequest
 from backend.services.review_service import review_service
 from backend.config import settings
+
+logger = logging.getLogger(__name__)
+
+ProgressFormatter = Callable[[int, int], str]
 
 
 class AutoReviewService:
@@ -75,14 +81,21 @@ class AutoReviewService:
             )
             return client
         except Exception as e:
-            print(f"创建LLM客户端失败: {e}")
+            logger.exception("创建 LLM 客户端失败: %s", e)
             return None
     
-    async def review_single_item(self, item: DataItem) -> Dict[str, Any]:
+    async def review_single_item(
+        self,
+        item: DataItem,
+        *,
+        llm_client: Optional[OpenAIClient] = None,
+        log: Optional[logging.Logger] = None,
+    ) -> Dict[str, Any]:
         """自动审核单个数据项"""
+        _log = log or logger
         try:
-            # 获取LLM客户端
-            client = self._get_llm_client()
+            # 获取LLM客户端（可注入与任务一致的客户端）
+            client = llm_client or self._get_llm_client()
             if not client:
                 return {
                     "success": False,
@@ -92,14 +105,17 @@ class AutoReviewService:
             # 构建审核提示
             data_content = json.dumps(item.content, ensure_ascii=False, indent=2)
             prompt = self.review_prompt_template.format(data_content=data_content)
-            
-            # 调用LLM进行审核
-            messages = [
-                {"role": "system", "content": "你是一个专业的数据质量审核员。"},
-                {"role": "user", "content": prompt}
-            ]
-            
-            response = await client.async_call(messages=messages, temperature=0.3)
+            # OpenAIClient 无 async_call；使用 generate_answer（与任务管线一致）
+            full_prompt = (
+                "你是一个专业的数据质量审核员。请只输出 JSON，不要输出其它说明文字。\n\n"
+                + prompt
+            )
+            prev_temp = getattr(client, "temperature", 0.0)
+            try:
+                client.temperature = 0.3
+                response = await client.generate_answer(full_prompt)
+            finally:
+                client.temperature = prev_temp
             
             # 解析响应
             try:
@@ -131,35 +147,58 @@ class AutoReviewService:
                 }
         
         except Exception as e:
+            _log.exception("review_single_item 异常 item_id=%s: %s", getattr(item, "item_id", ""), e)
             return {
                 "success": False,
                 "error": f"自动审核失败: {str(e)}"
             }
     
-    async def auto_review_batch(self, request: AutoReviewRequest) -> Dict[str, Any]:
+    async def auto_review_batch(
+        self,
+        request: AutoReviewRequest,
+        *,
+        llm_client: Optional[OpenAIClient] = None,
+        external_log: Optional[logging.Logger] = None,
+        progress_formatter: Optional[ProgressFormatter] = None,
+    ) -> Dict[str, Any]:
         """批量自动审核（优化版）"""
+        _log = external_log or logger
         try:
             results = []
             errors = []
             
             # 从第一个item_id提取task_id
             if not request.item_ids:
-                return {"success": False, "error": "未提供数据项ID"}
+                return {"success": False, "error": "未提供数据项ID", "message": None, "data": None}
             
             task_id = "_".join(request.item_ids[0].split("_")[:-1])
+            _log.info(
+                "[自动审核] 开始 task_id=%s 共 %d 条 threshold=%s auto_approve=%s auto_reject=%s",
+                task_id,
+                len(request.item_ids),
+                request.threshold,
+                request.auto_approve,
+                request.auto_reject,
+            )
             
             # 【优化1】一次性加载任务数据
             load_result = review_service.load_task_data(task_id)
             if not load_result["success"]:
-                return load_result
+                return {
+                    "success": False,
+                    "error": load_result.get("error", "加载任务数据失败"),
+                    "message": None,
+                    "data": None,
+                }
             
             items_dict = {item["item_id"]: DataItem(**item) for item in load_result["data"]}
             
             # 【优化2】提前加载审核数据，避免后面重复加载
             reviews = review_service._load_reviews(task_id)
             
+            total_n = len(request.item_ids)
             # 逐个审核（这部分需要调用LLM，无法避免）
-            for item_id in request.item_ids:
+            for idx, item_id in enumerate(request.item_ids, start=1):
                 if item_id not in items_dict:
                     errors.append({"item_id": item_id, "error": "数据项不存在"})
                     continue
@@ -169,7 +208,26 @@ class AutoReviewService:
                 item = items_dict[item_id]
                 
                 # 调用自动审核
-                review_result = await self.review_single_item(item)
+                review_result = await self.review_single_item(
+                    item, llm_client=llm_client, log=_log
+                )
+                if progress_formatter:
+                    _log.info(
+                        "[自动审核] 进度 %s | 第 %d/%d 条 item_id=%s 结果=%s",
+                        progress_formatter(idx, total_n),
+                        idx,
+                        total_n,
+                        item_id,
+                        "ok" if review_result.get("success") else "fail",
+                    )
+                else:
+                    logger.debug(
+                        "[AutoReview] %d/%d item_id=%s success=%s",
+                        idx,
+                        total_n,
+                        item_id,
+                        review_result.get("success"),
+                    )
                 
                 if review_result["success"]:
                     score = review_result["data"]["score"]
@@ -197,15 +255,26 @@ class AutoReviewService:
                         "reason": reason
                     })
                 else:
+                    err_msg = review_result.get("error", "未知错误")
                     errors.append({
                         "item_id": item_id,
-                        "error": review_result.get("error", "未知错误")
+                        "error": err_msg
                     })
+                    if external_log:
+                        _log.warning("[自动审核] 失败 item_id=%s: %s", item_id, err_msg)
+                    else:
+                        logger.warning("[AutoReview] 失败 item_id=%s: %s", item_id, err_msg)
             
             # 【优化4】只保存一次文件（移除了重复的_load_reviews调用）
             if results:  # 只有成功审核的才保存
                 review_service._save_reviews(task_id, reviews)
             
+            _log.info(
+                "[自动审核] 结束 task_id=%s 成功=%d 失败=%d",
+                task_id,
+                len(results),
+                len(errors),
+            )
             return {
                 "success": True,
                 "message": f"自动审核完成，成功 {len(results)} 个，失败 {len(errors)} 个",
@@ -218,9 +287,13 @@ class AutoReviewService:
             }
         
         except Exception as e:
+            _log = external_log or logger
+            _log.exception("批量自动审核异常: %s", e)
             return {
                 "success": False,
-                "error": f"批量自动审核失败: {str(e)}"
+                "error": f"批量自动审核失败: {str(e)}",
+                "message": None,
+                "data": None,
             }
 
 

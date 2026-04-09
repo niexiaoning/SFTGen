@@ -231,7 +231,8 @@ class TaskService:
                     "error": "任务不存在"
                 }
             
-            if task.status != TaskStatus.COMPLETED:
+            # 生成完成后即可下载（自动审核中、已完成）；处理中/待处理不可
+            if task.status in (TaskStatus.PENDING, TaskStatus.PROCESSING):
                 return {
                     "success": False,
                     "error": f"任务状态为 {task.status.value}，无法下载"
@@ -357,12 +358,16 @@ class TaskService:
                 "total": len(tasks),
                 "pending": 0,
                 "processing": 0,
+                "auto_reviewing": 0,
                 "completed": 0,
-                "failed": 0
+                "failed": 0,
             }
             
             for task in tasks:
-                summary[task.status.value] += 1
+                key = task.status.value
+                if key not in summary:
+                    summary[key] = 0
+                summary[key] += 1
             
             return {
                 "success": True,

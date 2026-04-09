@@ -74,7 +74,7 @@ export interface TaskInfo {
   task_description?: string  // 任务简介
   filenames: string[]  // 文件名列表
   filepaths: string[]  // 文件路径列表
-  status: 'pending' | 'processing' | 'completed' | 'failed'
+  status: 'pending' | 'processing' | 'auto_reviewing' | 'completed' | 'failed'
   created_at: string
   started_at?: string
   completed_at?: string

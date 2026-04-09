@@ -71,7 +71,7 @@
         row-key="item_id"
         style="width: 100%"
         stripe
-        v-loading="loading"
+        v-loading="loading || autoReviewLoading"
       >
         <el-table-column type="selection" width="50" :reserve-selection="false" />
         <el-table-column prop="item_id" label="ID" width="160" show-overflow-tooltip />
@@ -769,20 +769,33 @@ const startAutoReview = async () => {
   console.log('[startAutoReview] 开始自动审核', itemIds.length, '条数据')
   autoReviewLoading.value = true
   try {
-    await api.autoReview({
+    const res: any = await api.autoReview({
       item_ids: itemIds,
       threshold: autoReviewForm.value.threshold / 100,
       auto_approve: autoReviewForm.value.autoApprove,
       auto_reject: autoReviewForm.value.autoReject
     })
 
-    console.log('[startAutoReview] 自动审核完成')
-    ElMessage.success(`自动审核完成，共审核 ${itemIds.length} 条数据`)
+    if (!res?.success) {
+      ElMessage.error(res?.error || '自动审核失败')
+      return
+    }
+
+    const d = res.data || {}
+    const ok = d.success_count ?? 0
+    const bad = d.error_count ?? 0
+    ElMessage.success(
+      `自动审核结束：成功 ${ok} 条，失败 ${bad} 条（已请求 ${itemIds.length} 条）`
+    )
+    if (bad > 0 && Array.isArray(d.errors) && d.errors.length > 0) {
+      const first = d.errors[0]
+      ElMessage.warning(
+        `示例失败：${first.item_id || ''} — ${first.error || '未知原因'}`
+      )
+    }
     autoReviewDialogVisible.value = false
-    
-    console.log('[startAutoReview] 调用refreshData')
+
     await refreshData()
-    console.log('[startAutoReview] refreshData完成')
   } catch (error) {
     console.error('[startAutoReview] 自动审核失败', error)
     ElMessage.error('自动审核失败')
